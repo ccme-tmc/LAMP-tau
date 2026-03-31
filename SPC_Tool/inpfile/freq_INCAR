@@ -1,0 +1,38 @@
+SYSTM = Ru
+ISTART = 0
+GGA = PE
+IVDW=12
+
+#Electronic Relaxation
+ENCUT = 530
+EDIFF = 1E-07
+LREAL = AUTO 
+NELM = 100
+
+#Ionic Relaxation
+#EDIFFG = -0.005
+ISIF = 3
+IBRION = 5
+NFREE = 2
+#NSW = 500
+#POTIM = 0.10
+#ISPIN = 2
+#MAGMOM =2*1.5 142*0.0
+#ICHARG = 1
+
+#Electronic Relaxation 2
+#ALGO = Fast
+ISMEAR = 0
+SIGMA = 0.05
+LORBIT = 11
+
+#DOS
+#NEDOS = 301
+#EMAX = -20.0
+#EMIN = 20.0
+#NBANDS = 50
+
+#Files to write
+#NWRITE = 2
+LWAVE = .FALSE.
+LCHARG = .TRUE.

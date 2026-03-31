@@ -1,0 +1,149 @@
+  &GATEWAY                                                            
+    ricd                                                              
+    Basis                                                             
+    	Dy.ano-rcc-vtzp     
+		Dy_COORDS                                              
+    end of basis 
+    Basis           
+    	N.ano-rcc-vtz    
+      	N_COORDS
+    end of basis
+    Basis           
+    	O.ano-rcc-vtz    
+      	O_COORDS
+    end of basis   
+    Basis                                                             
+     	C.ano-rcc-vdz        
+     	C_COORDS                                                
+    end of basis
+    Basis                                                             
+    	H.ano-rcc-vdz        
+     	H_COORDS                                                 
+    end of basis 
+    ANGM                                                              
+		ANGM_ORIGIN                                                                             
+    AMFI                                                              
+    DOUG 
+  &SEWARD 	
+  &RASSCF                                                             
+    Title                                                             
+    Energy of sextet state                                        
+    symmetry                                                          
+      1                                                               
+    CIMX                                                              
+      200                                                             
+    Spin                                                              
+      6                                                               
+    ciroot                                                            
+      21 21 1                                                         
+    Nactel                                                            
+      9 0 0                                                          
+    Inactive                                                          
+      atNos_Inactive                                                         
+    Ras2                                                              
+      7                                                               
+    Iterations                                                        
+      200 100                                                         
+    levshift                                                          
+      1.5                                                             
+    lumorb                                                            
+    SDAV                                                              
+      500                                                             
+    ORBL                                                              
+    ALL                                                               
+    ORBA                                                              
+    FULL                                                              
+ >>COPY $Project.JobIph JOB001                              
+  &RASSCF                                                             
+    Title                                                             
+    Energy of quotet state                                        
+    symmetry                                                          
+      1                                                               
+    CIMX                                                              
+      200                                                             
+    Spin                                                              
+      4                                                               
+    ciroot                                                            
+      224 224 1                                                         
+    Nactel                                                            
+      9 0 0                                                          
+    Inactive                                                          
+      atNos_Inactive                                                            
+    Ras2                                                              
+      7                                                               
+    Iterations                                                        
+      200 100                                                         
+    levshift                                                          
+      1.5                                                             
+    lumorb                                                            
+    SDAV                                                              
+      500                                                             
+    ORBL                                                              
+    ALL                                                               
+    ORBA                                                              
+    FULL                                                              
+ >>COPY $Project.JobIph JOB002                              
+  &RASSCF                                                             
+    Title                                                             
+    Energy of doubltet state                                        
+    symmetry                                                          
+      1                                                               
+    CIMX                                                              
+      200                                                             
+    Spin                                                              
+      2                                                               
+    ciroot                                                            
+      490 490 1                                                         
+    Nactel                                                            
+      9 0 0                                                          
+    Inactive                                                          
+      atNos_Inactive                                                             
+    Ras2                                                              
+      7                                                               
+    Iterations                                                        
+      200 100                                                         
+    levshift                                                          
+      1.5                                                             
+    lumorb                                                            
+    SDAV                                                              
+      500                                                             
+    ORBL                                                              
+    ALL                                                               
+    ORBA                                                              
+    FULL                                                                  
+ >>COPY $Project.JobIph JOB003                                 
+  &RASSI
+    Nr of jobiph
+      3 21 128 130
+      1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21
+      1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128
+      1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 
+    Spinorbit
+    MEES
+    PROP
+      3
+    'ANGMOM' 1
+    'ANGMOM' 2
+    'ANGMOM' 3
+  &SINGLE_ANISO
+    MLTP 
+      8
+      2 2 2 2 2 2 2 2
+    UBAR
+    CRYS
+    Dy
+    MVEC 
+      3
+      0.0 0.0 1.0
+      0.0 1.0 0.0
+      1.0 0.0 0.0   
+    ENCU
+      250  500
+    HINT
+      0.0  20.0  101  0.001
+    TINT
+      0.0  300.0  200  0.001
+    MAVE
+      1 15
+    Poly
+  END                              

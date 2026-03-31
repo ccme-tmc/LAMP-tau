@@ -1,0 +1,77 @@
+#the filename you need input
+CFPs_filename: inpfile/CFPs_py.out        #The disturbed CFPs B_kq
+mag_filename: inpfile/eqpyout            #The magnetic calculation of the eq structure
+Ab_Type: 3                                #The platform of the Ab-initio calculation for mag_filename
+#Ab type:
+#0:Molcas
+#1:Openmocas
+#2:Orca
+#3:Pyscf
+freq_filename: inpfile/freq.log     #The frequency file from VASP, including wavenumbers and normal modes vectors
+POSCAR: inpfile/POSCAR              #The structure of  eq  
+TO_foldname: inpfile/ESO_TTO             #The information of element <J1M1|O_k^q|J2M2>
+
+
+#The path of outfile. If the files are exsisted, the program will read it
+VP_filename: inpfile/VP_exp_Cp1.log                #The file of spin-phonon couping element <\Psi_1|H_{s-ph}|\Psi_2>
+TPs_foldname: TPs_testnew/TPs_exp12_rt_mode3_sig10 #The fold of the master matrix 
+Out_foldname: TPs_file                             #The fold of the relaxation time
+
+#the correction of freq
+Correction_slope: 1    
+Corrected_intercept: 0
+
+#the order you want to fit the Bkq
+Fitting_order: 1    
+
+#the displacement point of the CFPs,for xyz the unit is 1\AA, for normal mode is the zero point vibration mode
+CFPs_X: [-0.1,-0.08,-0.06,-0.04,-0.02,0,0.02,0.04,0.06,0.08,0.1] 
+CFPs_Type: 1
+#CFPs label:
+#0:normal mode CFPs
+#1:xyz mode CFPs
+#2:xyz+reduce mode CFPs
+#3:Lorentz random CFPs
+
+#Molfile: inpfile/eq_opt.xyz
+#ct_idx: Dy
+#Atom_radius: 2.9
+#Atom_label: [0,1,2,3,4,5]
+#llzA: 1.918
+#llzw: 1.641
+
+
+If_Perb: True
+Perb_T: 0.01
+
+#the Linewidth_parameters of the gaussian expansion of frequency (cm^{-1})
+Linewidth_parameter: 10
+
+#the temprature range. The T is integral
+If_T_step: True
+nTrange: 2               #the nTrange means the number of range. If it is 2, the program will read Trange1 and Trange2
+#the first number is the min value of the T, the second is the max. If If_T_step==True, the third number is the size of step of T, else it is the number of the T
+Trange1: 10,50,5
+Trange2: 10,20,2
+Trange3: 2,10,1
+
+#the function
+If_get_picture_Tt: True
+If_Orbach: True
+If_Raman: False
+
+
+#the pre-entered relaxation time data you need
+If_Data: True
+ndata: 1                #the ndata means the number of line
+#Tr means the data of 1/T
+Tr1: [7.66192733017378e-002,7.97788309636651e-002,8.29383886255924e-002,8.60979462875198e-002,9.00473933649289e-002,9.47867298578199e-002,9.95260663507109e-002,1.05055292259084e-001,1.10584518167457e-001,1.16903633491311e-001,1.24802527646130e-001,1.42969984202212e-001,1.66666666666667e-001,5.00000000000000e-001]
+#logtime means the data of lg(\tau)
+logtime1: [-4.43614457831325e+000,-4.17590361445783e+000,-3.94457831325301e+000,-3.68433734939759e+000,-3.33734939759036e+000,-3.10602409638554e+000,-2.87469879518072e+000,-2.58554216867470e+000,-2.44096385542169e+000,-2.23855421686747e+000,-2.09397590361446e+000,-1.63132530120482e+000,-1.31325301204819e+000,1.05783132530120e+000]
+label1: Exp
+
+#Use the uniformization method
+If_uniformization: False
+
+
+

@@ -1,0 +1,92 @@
+import numpy as np
+from pyscf import scf
+from pyscf import df
+from embed_sim import myavas, ssdmet, siso, sacasscf_mixer, rdiis
+from mag_anal import psh
+import time
+import basis_set_exchange as bse
+from pyscf.gto.basis import parse_gaussian
+from pyscf import gto
+
+
+
+
+Molecular_Name
+Molecular_Charge
+Calculate_Title
+
+mol = gto.M(atom = m_name,
+     basis={
+            Pleaseset
+            'Dy':parse_gaussian.parse(bse.get_basis('x2c-TZVPall-2c',elements='Dy',fmt='gaussian94')),
+            'C' :parse_gaussian.parse(bse.get_basis('x2c-SVPall-2c' ,elements='C' ,fmt='gaussian94')),
+            'H' :parse_gaussian.parse(bse.get_basis('x2c-SVPall-2c' ,elements='H' ,fmt='gaussian94'))
+            },
+     symmetry=0 ,spin = 5 ,charge = m_ch,verbose= 4)
+     # basis：基函数，spin：未成对电子数，charge：总电荷，verbose：数字越大输出信息越详细
+
+rohf_start = time.time()
+auxbas = df.autoaux(mol)
+mf = scf.rohf.ROHF(mol).x2c().density_fit(auxbasis = auxbas)
+# 有未成对电子，所以用ROHF方法，没有自选污染，无需UHF方法；x2c：标量相对论效应修正
+chk_fname = title + '_rohf.chk'
+# 生成断点文件
+#Hartree-Fock方法参数设置
+mf.diis = rdiis.RDIIS(rdiis_prop='dS',imp_idx=mol.search_ao_label(['Dy.*']),power=0.2)
+mf.chkfile = chk_fname
+mf.init_guess = 'chk'
+mf.level_shift = 1   # 用于收敛的参数
+mf.max_cycle = 1000   # 最大迭代次数
+#mf.max_memory = 100000 # 最大内存
+mf.conv_tol = 1e-6   # 收敛精度
+mf.kernel() # 核函数，是该函数真正执行计算的函数
+
+
+rohf_end = time.time()
+print('ROHF time', rohf_end - rohf_start)
+dmet_start = time.time()
+rohf_dmet = ssdmet.SSDMET(mf, title=title, imp_idx=['Dy *'],es_natorb = False)
+rohf_dmet.build(chk_fname_load=title + '_dmet_chk.h5')
+
+
+ncas, nelec, mo = rohf_dmet.avas(['Dy 4f'], minao='x2c-TZVPall-2c', threshold=0.5, openshell_option = 3)
+ncas = 7
+nelec = 9
+es_cas = sacasscf_mixer.sacasscf_mixer(rohf_dmet.es_mf, ncas, nelec,statelis=[0,0,0,0,0,21])
+es_cas.conv_tol_grad = 5e-4
+es_cas.chkfile = title + '_dmet.chk'
+es_cas.kernel(mo)
+print('CASSCF excitation_ene')
+print(np.sort(es_cas.e_states) - np.min(np.array(es_cas.e_states)))
+dmet_end = time.time()
+print('DMET-CAS time', dmet_end - dmet_start)
+"""
+dmet_nevpt2_start = time.time()
+e_corr = sacasscf_mixer.sacasscf_nevpt2(es_cas)
+es_cas.fcisolver.e_states = es_cas.fcisolver.e_states + e_corr
+print('DMET-NEVPT2 excitation_ene')
+print(np.sort(es_cas.e_states) - np.min(np.array(es_cas.e_states)))
+dmet_nevpt2_end = time.time()
+print('DMET-NEVPT2 time', dmet_nevpt2_end - dmet_nevpt2_start)
+"""
+siso_start = time.time()
+total_cas = rohf_dmet.total_cas(es_cas)
+mysiso = siso.SISO(title, total_cas,statelis=[0,0,0,0,0,21], amfi=True)
+mysiso.kernel()
+siso_end = time.time()
+print('SISO time', siso_end - siso_start)
+
+
+
+
+# e_corr = sacasscf_mixer.sacasscf_nevpt2(mycas) # NEVPT2对能量进行校正
+# mycas.fcisolver.e_states = mycas.fcisolver.e_states + e_corr
+
+# 旋轨耦合会造成自旋简并度的破缺，所以需要用SISO方法进行计算 
+
+psh_start = time.time()
+mypsh = psh.PSH(mysiso,Nstate=int(16),lmax=int(12),TFO=1,TFB=0,ROT=True,Angle=PLEASESET)
+mypsh.kernel()
+psh_end = time.time()
+print('PSH time', psh_end - psh_start)
+

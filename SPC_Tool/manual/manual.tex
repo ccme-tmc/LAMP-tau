@@ -1,0 +1,219 @@
+\documentclass[UTF8]{ctexart}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{bm}
+\usepackage{mathrsfs}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{dcolumn}
+\usetikzlibrary{arrows,shapes,chains}
+%\bibliographystyle{unsrt}
+%\usepackage[backend=bibtex,sorting=none]{biblatex}
+%\addbibresource{./thesis.bib}
+\title{Relaxation\_Package}
+\author{邓意凡 2001110333}
+
+%\usepackage[backend=bibtex,sorting=none]{biblatex}
+%\addbibresource{./thesis.bib} %BibTeX数据文件及位置
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{程序流程}
+该程序为用于计算单分子磁体的驰豫时间的Python程序，暂命名为Relaxation\_Package，
+其主要由三个模块构成，分别是结构优化与频率计算模块，微扰晶体场参数计算模块和弛豫时间计算模块。\\
+
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2cm, minimum height=1cm, text centered, draw=blue]
+\tikzstyle{io2} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2cm, minimum height=1cm, text centered, draw=red]
+\tikzstyle{proc} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=blue]
+\tikzstyle{point}=[coordinate,on grid] 
+\tikzstyle{arrow} = [thick,->,>=stealth]
+\begin{tikzpicture}[node distance=2cm]
+	\node (Cry) [io] {晶体结构};
+	\node (optp) [proc,below of=Cry] {结构优化与频率计算};
+	\node (opts) [io,below of=optp] {opt.xyz};
+	\node (exps) [io,left of=opts, xshift=-2cm] {exp.xyz};
+	\node (freql) [io,right of=opts, xshift=+2cm] {freq.log};
+	\node (pBkqp) [proc,below of=opts] {微扰晶体场参数计算};
+	\node (pt1) [point,below of=pBkqp,yshift=1cm]{};
+	\node (pBkq) [io,below of=pBkqp] {$B_kq^{P}$};
+	\node (eqmag) [io,left of=pBkq, xshift=-2cm] {eq\_mag.log};
+	\node (rtp) [proc,below of=pBkq] {弛豫时间计算};
+	\node (rt) [io,below of=rtp] {$\tau_0$};
+	
+	\draw [arrow] (Cry) --node[anchor=center] {} (optp);
+	\draw [arrow] (optp) --node[anchor=center] {} (opts);
+	\draw [arrow] (optp) -|node[anchor=center] {} (exps);
+	\draw [arrow] (optp) -|node[anchor=center] {} (freql);
+	\draw [arrow] (opts) --node[anchor=center] {} (pBkqp);
+	\draw [arrow] (exps) |-node[anchor=center] {} (pBkqp);
+	\draw [arrow] (freql) |-node[anchor=center] {} (pBkqp);
+	\draw [arrow] (pBkqp) --node[anchor=center] {} (pBkq);
+	\draw [arrow] (pt1) -|node[anchor=center] {} (eqmag);
+	
+	\draw [arrow] (eqmag) |-node[anchor=center] {} (rtp);
+	\draw [arrow] (pBkq) --node[anchor=center] {} (rtp);
+	\draw [arrow] (freql) |-node[anchor=center] {} (rtp);
+	\draw [arrow] (rtp) --node[anchor=center] {} (rt);
+	
+\end{tikzpicture}\\
+
+
+三个模块分别储存在主目录下的三个文件夹，/opt\_freq/，/Per\_B\_kq/，和/Relaxation/中。
+\subsection{结构优化与频率计算模块}
+该模块位于/opt\_freq/中，用于体系结构的优化和频率计算，其程序流程图如下
+
+\begin{tikzpicture}[node distance=2cm]
+	\node (Cry) [io2] {晶体结构};
+	\node (select) [proc,below of=Cry] {预处理};
+	\node (exps) [io,below of=select] {实验结构};
+	\node (pt0) [point,left of=exps,xshift=-3cm]{};
+	\node (optp) [proc,below of=exps] {结构优化};
+	\node (optinp) [io2,right of=optp, xshift=+3cm] {优化参数};
+	\node (opts) [io,below of=optp] {优化结构};
+	\node (pt1) [point,left of=opts,xshift=-3cm]{};
+	\node (freqp) [proc,below of=opts] {频率计算};
+	\node (freqinp) [io2,right of=freqp, xshift=+3cm] {频率参数};
+	\node (freql) [io,below of=freqp] {freq.log};
+	\node (pt2) [point,left of=freql,xshift=-3cm]{};
+
+	\draw [arrow] (Cry) --node[anchor=center] {} (select);
+	\draw [arrow] (select) --node[anchor=center] {} (exps);
+	\draw [arrow] (exps) --node[anchor=center] {} (pt0);
+	\draw [arrow] (exps) --node[anchor=center] {} (optp);
+	\draw [arrow] (optinp) --node[anchor=center] {} (optp);
+	\draw [arrow] (optp) --node[anchor=center] {} (opts);
+	\draw [arrow] (opts) --node[anchor=center] {} (pt1);
+	\draw [arrow] (opts) --node[anchor=center] {} (freqp);
+	\draw [arrow] (freqinp) --node[anchor=center] {} (freqp);
+	\draw [arrow] (freqp) --node[anchor=center] {} (freql);
+	\draw [arrow] (freql) --node[anchor=center] {} (pt2);
+\end{tikzpicture}\\
+该模块目前只支持VASP软件
+
+\subsubsection{vaspsh}
+该文件夹负责使用VASP进行结构优化和频率计算，包含三个sh文件POSCAR.sh，opt.sh,freq.sh和两个py文件gen\_POSCAR.py,Select\_group.py。流程图中红框内的输入文件放在/inipfile/中，该文件夹内包含了所需要预先设置的晶体结构和输入文件。vasp的输入文件包括opt\_INCAR，freq\_INCAR，前者为结构优化，后者为频率计算
+
+在使用/opt\_freq/vaspsh/文件夹时，首先将改POSCAR.sh中调用的gen\_POSCAR.py的--cry项改为预设晶体结构的文件路径，随后运行程序，该程序会在/opt\_freq/下新建一个临时文件夹tmpfile，并根据晶体结构文件在inpfile/里生成POSCAR文件
+
+随后运行opt.sh，该程序会新建/pot\_freq/VASP/opt/文件夹，并根据inpfile里的POSCAR和opt\_INCAR以及自身的vaspkitd的参数生成VASP的输入文件，并根据sh/job\_vasp.sh提交计算
+
+最后关于freq.sh，首先需要修改脚本中调用Select\_group.py的--ct项，将其修改为SMMs的中心离子，其次需要在结构优化完成后运行。该脚本会首先检索opt计算是否收敛，如果不收敛则重复提交opt计算。若收敛，则新建/opt\_freq/VASP/freq/文件夹，复制优化后的结构于/inpfile/下，后调用Select\_group.py生成动力学限制的频率计算文件并提交。建议使用时检查Select\_group.py选择的基团是否合理
+
+\subsection{微扰晶体场参数计算}
+该模块位于/Per\_B\_kq/中，用于生成扰动的结构并计算微扰自旋声子哈密顿量，其程序流程图如下
+
+\begin{tikzpicture}[node distance=2cm]
+	\node (opts) [io] {优化结构};
+	%\node (exps) [io,left of=opts,xshift=-3cm] {实验结构文件};
+	\node (freql) [io,right of=opts,xshift=+3cm] {freq.log};
+	\node (pt1) [point,below of=opts,yshift=1cm]{};
+	\node (gens) [proc,below of=opts] {生成微扰结构};
+	\node (run1) [io,right of=gens,xshift=+3cm] {run1.sh};
+	\node (mol) [io,below of=gens] {微扰结构mol};
+	
+	\node (regr) [proc,below of=mol] {调整微扰结构};
+	\node (run2) [io,right of=regr,xshift=+3cm] {run2.sh};
+	\node (mol2) [io,below of=regr] {微扰结构mol2};
+	
+	\node (magtmp) [io2,right of=mol2,xshift=+3cm] {磁性计算文件};
+	\node (inp) [proc,below of=mol2] {生成计算文件};
+	\node (run3) [io,right of=inp,xshift=+3cm] {run3.sh};
+	\node (mag) [io,below of=inp] {计算文件mag};
+	
+	\node (yh) [proc,below of=mag] {投递计算文件};
+	\node (jobsh) [io,right of=yh,xshift=+3cm] {yhjob.sh和check.sh};
+	\node (magl) [io,below of=yh] {mag.log};
+	
+	\node (ExB) [proc,below of=magl] {提取晶体场参数};
+	\node (Bkq) [io,right of=ExB,xshift=+3cm] {run4.sh};
+	\node (CFPs) [io,below of=ExB] {CFPs.out};
+	
+	\draw [arrow] (opts) --node[anchor=center] {} (gens);
+	\draw [arrow] (freql) |-node[anchor=center] {} (pt1);
+	\draw [arrow] (run1) --node[anchor=center] {} (gens);
+	\draw [arrow] (gens) --node[anchor=center] {} (mol);
+	
+	\draw [arrow] (mol) --node[anchor=center] {} (regr);
+	\draw [arrow] (run2) --node[anchor=center] {} (regr);
+	\draw [arrow] (regr) --node[anchor=center] {} (mol2);
+	
+	\draw [arrow] (magtmp) --node[anchor=center] {} (inp);
+	\draw [arrow] (mol2) --node[anchor=center] {} (inp);
+	\draw [arrow] (run3) --node[anchor=center] {} (inp);
+	\draw [arrow] (inp) --node[anchor=center] {} (mag);
+	
+	\draw [arrow] (mag) --node[anchor=center] {} (yh);
+	\draw [arrow] (jobsh) --node[anchor=center] {} (yh);
+	\draw [arrow] (yh) --node[anchor=center] {} (magl);
+	
+	\draw [arrow] (magl) --node[anchor=center] {} (ExB);
+	\draw [arrow] (Bkq) --node[anchor=center] {} (ExB);
+	\draw [arrow] (ExB) --node[anchor=center] {} (CFPs);
+\end{tikzpicture}\\
+
+\subsubsection{Molcassh}
+该部分用于生成计算精确微扰晶体场参数$B_{kq}^{P}$或微扰$\bm{D}$张量$\bm{D}^P$所需的扭曲结构，原理为将平衡结构沿着每一个振动模位移方向位移指定的距离，单位为零点振动能对应的位移。并最终使用open-molcas进行计算。该部分包含6个sh脚本和8个py脚本组成。流程图中红框内的输入文件放在/inipfile/中,molcas的输入文件为mag\_tmp.in。
+\subsubsection{run1\_stru.sh}
+该脚本用于生成扭曲后的结构，使用时调整其中的参数，如果沿笛卡尔坐标系位移，则调用gen\_structures\_xyz.py；沿简谐坐标位移，则调用gen\_structures\_cell.py。$-np$参数为总结构数，必须为偶数，$-mdp$参数为表示最大位移，在笛卡尔坐标系下单位为1$\AA$，在简谐坐标下为零点振动位移。例如$-np 10 -mdp1$表示最大位移为1，每一个振动模生成位移为$(-1.0, -0.8, -0.6, ..., 0.6, 0.8, 1.0)$的10个扭曲结构文件。使用时运行脚本，生成扭曲结构和平衡结构的结构路径为$perb/n/m$，n表示第n个振动模，m表示第m个扭曲结构。若使用的是gen\_structures\_cell.py则需要额外运行run2\_Regr.sh
+\subsubsection{run2\_Regr.sh}
+该脚本用于调整扭曲后的结构，主要为gen\_structures\_cell.py使用，输入第一节中的atom\_list和dpxs，从扭曲后的晶格结构中提取出指定的分子结构，并用于下一步的磁性计算。\\
+运行脚本前需要调整脚本中的振动模式数num\_freq和扭曲结构数num\_pt。
+\subsubsection{run3\_inp.sh}
+该脚本用于生成磁性计算文件,支持open-molcas的计算，在mag\_tmp.in中调整计算参数，运行脚本前需要调整脚本中的振动模式数num\_freq，扭曲结构数num\_pt，电荷数i\_charge。
+
+\subsubsection{yhjob.sh和check.sh}
+运行完上述三个脚本后，会新建Pyscfsh/perb/文件夹，在perb/中，会有1个平衡文件夹eq/和数个振动模文件夹，同时会有三个脚本yhjob.sh，yhjob2.sh和check.sh，我们需要修改这三个脚本中的振动模式数num\_freq，扭曲结构数num\_pt，任务提交数num\_mission。在eq文件夹中，除了结构文件和计算配置文件，还有任务提交文件jobeq.sh，需手动提交。在每一个振动文件夹中，除了数个扭曲结构文件夹外，还有任务提交文件job.sh。
+
+为了批量提交这些文件，我们首先运行yhjob.sh，该程序会批量提交各个振动模的任务job.sh，进行CASSCF+SOC的计算。由于计算文件过大，可以辅助运行check.sh。该脚本会自动检索已完成的计算是否收敛，并仅保留已完成的计算的log文件中的输入部分和Single\_Aniso部分。
+
+\subsubsection{run4\_CFPs.sh}
+所有计算完成后使用run4\_CFPs.sh提取微扰D张量$CFPs.out$。
+
+\subsubsection{Pyscfsh}
+该部分用于生成计算精确微扰晶体场参数$B_{kq}^{P}$或微扰$\bm{D}$张量$\bm{D}^P$所需的扭曲结构，原理为将平衡结构沿着每一个振动模位移方向位移指定的距离，单位为零点振动能对应的位移。并最终使用Pyscf进行计算。该部分包含6个sh脚本和8个py脚本组成,流程图中红框内的输入文件放在/inipfile/中,Pyscf的输入文件包括dmet和cassi两个部分
+\subsubsection{run1\_stru.sh}
+该脚本用于生成扭曲后的结构，使用时调整其中的参数，如果沿笛卡尔坐标系位移，则调用gen\_structures\_xyz.py；沿简谐坐标位移，则调用gen\_structures\_cell.py。$-np$参数为总结构数，必须为偶数，$-mdp$参数为表示最大位移，在笛卡尔坐标系下单位为$\AA$，在简谐坐标下为零点振动位移。例如$-np 10 -mdp1$表示最大位移为1，每一个振动模生成位移为$(-1.0, -0.8, -0.6, ..., 0.6, 0.8, 1.0)$的10个扭曲结构文件。使用时运行脚本，生成扭曲结构和平衡结构的结构路径为$perb/n/m$，n表示第n个振动模，m表示第m个扭曲结构。若使用的是gen\_structures\_cell.py则需要额外运行run2\_Regr.sh
+\subsubsection{run2\_Regr.sh}
+该脚本用于调整扭曲后的结构，主要为gen\_structures\_cell.py使用，输入第一节中的atom\_list和dpxs，从扭曲后的晶格结构中提取出指定的分子结构，并用于下一步的磁性计算。\\
+运行脚本前需要调整脚本中的振动模式数num\_freq和扭曲结构数num\_pt。
+\subsubsection{run3\_inp.sh}
+该脚本用于生成磁性计算文件,支持Pyscf的计算，在dmet\_tmp.py中调整计算参数，运行脚本前需要调整脚本中的振动模式数num\_freq，扭曲结构数num\_pt，电荷数i\_charge和任务名name。
+
+\subsubsection{yhjob.sh和check.sh}
+运行完上述三个脚本后，会新建Pyscfsh/perb/文件夹，在perb/中，会有1个平衡文件夹eq/和数个振动模文件夹，同时会有三个脚本yhjob.sh，yhjob2.sh和check.sh，我们需要修改这三个脚本中的振动模式数num\_freq，扭曲结构数num\_pt，任务提交数num\_mission和任务名name。在eq文件夹中，除了结构文件和计算配置文件，还有任务提交文件jobeq.sh，需手动提交。在每一个振动文件夹中，除了数个扭曲结构文件夹外，还有任务提交文件job.sh和job2.sh。
+
+为了批量提交这些文件，我们首先运行yhjob.sh，该程序会批量提交各个振动模的任务job.sh，进行ROHF的计算，一次提交的最大任务量由num\_mission控制，该脚本会自动检索哪些文件已经提交。但该脚本并不会检测计算是否收敛，所以需要辅助运行check.sh。该脚本会自动检索已完成的计算是否收敛，并选择是否调用insert\_xyz.py重新生成输入文件。之后运行yhjob.sh重新计算这些文件
+
+在所有的ROHF计算完成后，运行yhjob2.sh，该程序会批量提交各个振动模的任务job2.sh，进行轨道的选取和DMET及后续的计算。
+
+\subsubsection{run4\_Dtensor.sh}
+所有计算完成后使用run4\_Dtensor.sh提取微扰D张量$CFPs.out$。
+
+\subsection{弛豫时间计算}
+
+\subsection{其他文件}
+
+\subsubsection{inpfile}
+该文件夹内包含了所需要预先设置的晶体结构和输入文件，包括vasp的输入文件，pyscf的输入文件。vasp的输入文件包括opt\_INCAR，freq\_INCAR，前者为结构优化，后者为频率计算。Pyscf的输入文件包括dmet和cassi两个部分
+\subsubsection{sh}
+该文件夹内包含了各个运行脚本，包括vasp的投递脚本job\_vasp.sh，磁性计算的检查和批量投递脚本check.sh和yhjob.sh,yhjod2.sh，以及Pyscf的投递脚本job.sh,job2.sh,jobeq.sh。使用前需要调整各个脚本里的参数，除了投递任务名，核数外，还需要在检查和批量投递脚本中确认任务名，频率数和扭曲结构数。
+
+
+\subsubsection{基团选择}
+该部分用于从晶格数据中选择需要计算的分子部分，由Select\_Group.py实现，程序原理为从指定初始原子集（一般为中心原子）出发，将原子集中每个原子的指定半径内的原子纳入原子集，并不断迭代，最终包含指定分子。目前程序会要求输入指定的中心原子的名称，第一次以较大的半径纳入原子，后以固定的较小半径不断迭代，知道原子集的数量不再增加停止。程序会输出整个晶胞的VASP输入文件POSCAR，指定分子的结构数据eq.xyz，选定原子序号atom\_list及晶格位移数据dpxs。
+
+
+
+
+
+
+\section{参考文献}
+\renewcommand\refname{}
+\bibliographystyle{unsrt}
+\bibliography{thesis}
+\end{document}
