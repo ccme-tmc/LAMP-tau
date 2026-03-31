@@ -13,8 +13,8 @@ TO_foldname: inpfile/ESO_TTO             #The information of element <J1M1|O_k^q
 
 
 #The path of outfile. If the files are exsisted, the program will read it
-VP_filename: inpfile/VP_exp_Cp1.log                #The file of spin-phonon couping element <\Psi_1|H_{s-ph}|\Psi_2>
-TPs_foldname: TPs_testnew/TPs_exp12_rt_mode3_sig10 #The fold of the master matrix 
+VP_filename: inpfile/VP.log                #The file of spin-phonon couping element <\Psi_1|H_{s-ph}|\Psi_2>
+TPs_foldname: TPs #The fold of the master matrix 
 Out_foldname: TPs_file                             #The fold of the relaxation time
 
 #the correction of freq
@@ -43,6 +43,7 @@ CFPs_Type: 1
 
 If_Perb: True
 Perb_T: 0.01
+g_z: 19.8
 
 #the Linewidth_parameters of the gaussian expansion of frequency (cm^{-1})
 Linewidth_parameter: 10

@@ -153,6 +153,7 @@ class CAL_RELAX(object):
         self.If_Data = bool(pinput['If_Data'])
         self.If_Perb = bool(pinput['If_Perb'])
         self.Perb_T = float(pinput['Perb_T'])
+        self.g_z = float(pinput['g_z'])
         self.If_uniformization = bool(pinput['If_uniformization'])
         self.CFPs_Type = int(pinput['CFPs_Type'])
         self.Ab_Type = int(pinput['Ab_Type'])
@@ -161,7 +162,7 @@ class CAL_RELAX(object):
         #self.If_select_sigma = bool(pinput['If_select_sigma'])
         self.If_select_sigma = False
         self.select_sigma = 10000
-        
+
         self.If_Orbach = bool(pinput['If_Orbach'])
         self.If_Raman = bool(pinput['If_Raman'])
         if not Path(self.Out_foldname).is_dir():
@@ -198,9 +199,9 @@ class CAL_RELAX(object):
         """
         match self.CFPs_Type:
             case 0:
-                self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type)
+                self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,order=self.Fitting_order)
             case 1:
-                self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type)
+                self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,order=self.Fitting_order)
             case 2:
                 molfile = self.pinput['Molfile']
                 try:
@@ -209,10 +210,10 @@ class CAL_RELAX(object):
                     ct_idx='Dy'
                 try:
                     Atom_radius = float(self.pinput['Atom_radius'])
-                    self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,radius=Atom_radius,molfile=molfile,ct_idx=ct_idx)
+                    self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,radius=Atom_radius,molfile=molfile,ct_idx=ct_idx,order=self.Fitting_order)
                 except:
                     Atom_label = float(self.pinput['Atom_label'])
-                    self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,Atom_label=Atom_label,molfile=molfile,ct_idx=ct_idx)
+                    self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,Atom_label=Atom_label,molfile=molfile,ct_idx=ct_idx,order=self.Fitting_order)
             case 3:
                 llzA = float(self.pinput['llzA'])
                 llzw = float(self.pinput['llzw'])
@@ -249,7 +250,7 @@ class CAL_RELAX(object):
         self.Eigen.gen_J_number()
         self.Eigen.propare_TO(self.TO_foldname)
         if self.If_Perb:
-            self.Eigen.Pertubation(self.Perb_T) 
+            self.Eigen.Pertubation(self.Perb_T,self.g_z) 
 
     def SPC_Analyse(self):
         """
@@ -670,7 +671,7 @@ class CFPs_Analyze(object):
         self.dgz = dgz
         self.dgvec = dgvec
 
-    def propare_CFPs(self,mol,CFPs_Type=0,atoms_label=None,radius=0,dradius=0.001,molfile=None,outfold='./',ct_idx='Dy',llzA=0,llzw=0):
+    def propare_CFPs(self,mol,CFPs_Type=0,atoms_label=None,radius=0,dradius=0.001,molfile=None,outfold='./',ct_idx='Dy',llzA=0,llzw=0,order=1):
         """CFPs label:
         0:normal mode CFPs
         1:xyz mode CFPs
@@ -680,15 +681,15 @@ class CFPs_Analyze(object):
         match CFPs_Type:
             case 0:
                 self.read_CFPs()
-                self.gen_slope()
+                self.gen_slope(order)
             case 1:
                 self.read_CFPs_xyz()
-                self.gen_slope_xyz()
+                self.gen_slope_xyz(order)
                 self.transB_sl(mol.massvecs)
             case 2:
                 if radius != 0:
                     origgr,newgr,atoms_label=choose_group(molfile,ct_idx,outfold,radius,dradius)
-                self.gen_slope_reduced(atoms_label)
+                self.gen_slope_reduced(order,atoms_label)
                 self.transB_sl(mol.massvecs)
             case 3:
                 if llzw !=0 and llzA != 0:
@@ -876,7 +877,7 @@ class CFPs_Analyze(object):
         plt.show()
         print("mode:"+str(n)+" ,k=6")
     
-    def gen_slope(self):
+    def gen_slope(self,order):
         """
         Fit the linear function of B(X) to x
         """
@@ -885,10 +886,10 @@ class CFPs_Analyze(object):
             X,B = self.select_XB(i)
             #print(i,X,B)
             for j in range(0,27):
-                B_slope[i,j] = polyfit(X, B[...,j], 1)[0]
+                B_slope[i,j] = polyfit(X, B[...,j], order)[int(order-1)]
         self.B_slope = B_slope
 
-    def gen_slope_xyz(self):
+    def gen_slope_xyz(self,order):
         """
         Fit the linear function of B(X) to x
         """
@@ -897,10 +898,10 @@ class CFPs_Analyze(object):
             X,B = self.select_XB(i)
             #print(i,X,B)
             for j in range(0,27):
-                B_slope[i,j] = polyfit(X, B[...,j], 1)[0]
+                B_slope[i,j] = polyfit(X, B[...,j], order)[int(order-1)]
         self.B_slopexyz = B_slope
 
-    def gen_slope_reduced(self,atoms_label):
+    def gen_slope_reduced(self,order,atoms_label):
             """
             Fit the function of B(X) to x wirh n-th order function and only consider the nearest atoms
             """
@@ -911,10 +912,10 @@ class CFPs_Analyze(object):
                 for l in range(3):
                     i = k*3+l
                     for j in range(0,27):
-                        B_slope[i,j] = polyfit(self.X, self.Bkq[i,...,j], 1)[0]
+                        B_slope[i,j] = polyfit(self.X, self.Bkq[i,...,j], order)[int(order-1)]
             self.B_slopexyz = B_slope
 
-    def gen_unmassslope(self,mol):
+    def gen_unmassslope(self,order,mol):
         
         B_slope = np.empty([self.nmds,27], dtype = float)
         for i in range(0,self.nmds):
@@ -922,7 +923,7 @@ class CFPs_Analyze(object):
             x = x_fac / np.sqrt(mol.masses[i] * mol.freqs[i])
             #print(i,X,B)
             for j in range(0,27):
-                B_slope[i,j] = polyfit(X, B[...,j], 1)[0]/x
+                B_slope[i,j] = polyfit(X, B[...,j], order)[int(order-1)]/x
         self.B_slope = B_slope
 
     def select_XB(self,i):
@@ -936,18 +937,6 @@ class CFPs_Analyze(object):
                 B = np.append(B, [Btest[k,...]], axis=0)
                 X = np.append(X,self.X[k])
         return X,B
-        
-    def gen_coeff2(self,n):
-        """
-        Fit the function of B(X) to x wirh n-th order function, not used now
-        """
-        coeff = np.empty([self.nmds,27,n+1], dtype = float)
-        for i in range(0,self.nmds):
-            for j in range(0,27):
-                X = [-0.2,-0.1,0,0.1,0.2]
-                Y = [self.Bkq[i,0,j],self.Bkq[i,3,j],self.Bkq[i,5,j]]
-                coeff[i,j,...] = polyfit(self.X, self.Bkq[i,...,j], n)
-        self.coeff = coeff
     
     def gen_B_x(self,x,m,n):
         """
@@ -1495,7 +1484,7 @@ class Eigenstates(object):
             #b += B2*H
         return a
 
-    def Pertubation(self,MF):
+    def Pertubation(self,MF,g_z=19.8):
         """
         Add a magnetic field MF to the system, pertube the eigenfunction
         """
@@ -1504,15 +1493,15 @@ class Eigenstates(object):
         B = self.B
         #Bkq = Eigen.read_Bkq()
         #print(Eigen.JAN)
-        H = np.zeros([16,16],dtype=complex)
-        g_z = 19.8866
         n_states = self.n_states
+        H = np.zeros([n_states, n_states],dtype=complex)
+        
         for f in range(0,n_states):
             for i in range(0,n_states):
                 Ht = 0
                 for m in range(0,n_states):
                     for n in range(0,n_states):
-                        Ht += complex(A[f,m]-B[f,m]*1j)*complex(A[i,n]+B[i,n]*1j)*g_z*MF*0.4669*Delta(m,n)*(n-15/2)
+                        Ht += complex(A[f,m]-B[f,m]*1j)*complex(A[i,n]+B[i,n]*1j)*g_z*MF*0.4669*Delta(m,n)*(n-n_states-1/2)
                 H[f,i] = Ht
         #print(H)
         Anew = np.zeros([n_states,n_states],dtype=float)
@@ -1640,10 +1629,7 @@ class TPs_Analyze(object):
         """
         for j in range(nmds):
             TP += TPs[...,j]    
-        """for i in range(0,nstates):
-            for j in range(0,nstates):
-                if i != j and abs(TP[i,j]) < 1e-10:
-                    TP[i,j] = 1e-10"""
+
         for i in range(0,nstates):
             for j in range(0,nstates):
                 if i != j:
@@ -1665,10 +1651,7 @@ class TPs_Analyze(object):
         self.U = U
         self.Vh = Vh
         TPP = np.zeros([self.nstates,self.nstates],dtype = float)
-        # for i in range(self.nstates):
-        #     for j in range(self.nstates):
-        #         if i != j :
-        #             TPP[i,j] = -TP[i,j]/TP[j,j]
+
         cm = abs(TP.min())
         for i in range(self.nstates):
             for j in range(self.nstates):
@@ -1696,13 +1679,6 @@ class TPs_Analyze(object):
         Add the result th the T_list and Rate_list
         """
         TPs_Analyze.OBT_list = np.append(TPs_Analyze.OBT_list,self.T)
-        # if self.T>10:
-        #     TPs_Analyze.OBRate_list = np.append(TPs_Analyze.OBRate_list,self.testS[14])
-        #     TPs_Analyze.OBRate_list2 = np.append(TPs_Analyze.OBRate_list2,self.testS[15])
-        # else:
-        #     TPs_Analyze.OBRate_list = np.append(TPs_Analyze.OBRate_list,self.testS[15])
-        #     TPs_Analyze.OBRate_list2 = np.append(TPs_Analyze.OBRate_list2,self.testS[14])
-        #print(TPs_Analyze.OBRate_list2)
         TPs_Analyze.OBRate_list = np.append(TPs_Analyze.OBRate_list,self.OBrate[1])
         return TP,rate,Vector
     
@@ -1738,16 +1714,7 @@ class TPs_Analyze(object):
         """
         for j in range(nmds):
             TP += TPs[...,j]    
-            #print(j,TP[0,0])
-#         for i in range(0,nstates):
-#             for j in range(0,nstates):
-#                 if i != j:
-#                     TP[i,i] -= TP[j,i]
-        #print(self.TP_nmds)
-        # for i in range(0,nstates):
-        #     for j in range(0,nstates):
-        #         if TP[i,j] < 1e-5:
-        #             TP[i,j] = 0
+
         """
         Diagonalization TP matrix to get -rate
         """
@@ -1760,12 +1727,6 @@ class TPs_Analyze(object):
         #print(rate)
         self.OBVector = Vector
 
-#         TPP = np.zeros([self.nstates,self.nstates],dtype = float)
-#         for i in range(self.nstates):
-#             for j in range(self.nstates):
-#                 if i != j :
-#                     TPP[i,j] = -TP[i,j]/TP[j,j]
-#         self.OBTPP = TPP
         """
         Calculate Magnetic component of each relaxation process
         """
@@ -1819,14 +1780,6 @@ class TPs_Analyze(object):
                     for i in range(0,nstates):
                         line = file.readline()
                         TPs[i,...,j,k] = line.split()
-                    # if TPs[3,0,j,k]>1e10 and j+k < -5:
-                    #     TPs[3,0,j,k] = 0
-                    # if T == 180 and TPs[3,0,j,k]>1e10:
-                    #     TPcount +=1
-                    #     TPtest = TPtest+TPs[3,0,j,k]
-                    #     print("modes:{x},{y},Count:{z}".format(x=j,y=k,z=TPcount))
-                    #     print("TP:",'%1.2e'%TPs[3,0,j,k],"Total TP:",'%1.2e'%TPtest)
-        #TPs[1,0,...] = TPs[1,0,...]*1e2
         self.RMTPs = TPs
         self.nmds =nmds
         self.nstates = nstates
@@ -1887,7 +1840,6 @@ class TPs_Analyze(object):
         Add the result th the T_list and Rate_list
         """
         TPs_Analyze.RMT_list = np.append(TPs_Analyze.RMT_list,self.T)
-        #TPs_Analyze.RMRate_list = np.append(TPs_Analyze.RMRate_list,self.RMTP[1,0])
         TPs_Analyze.RMRate_list = np.append(TPs_Analyze.RMRate_list,self.RMrate[1])
         TPs_Analyze.RMRate_list2 = np.append(TPs_Analyze.RMRate_list2,self.RMrate[0])
         TPs_Analyze.RMRate_list_lt = np.append(TPs_Analyze.RMRate_list_lt,self.RMTP[1,0])
@@ -1973,40 +1925,6 @@ class TPs_Analyze(object):
         TPP = self.OBTPP*100
         np.savetxt(filename,TPP,fmt='%1.2f',delimiter=' ')
         return self.TP,self.rate,self.Vector
-    
-    # def Analyse_TP_modes(self,m,n):
-    #     TPmodes = np.zeros([self.TP_nmds], dtype = float)
-    #     TPper = np.zeros([self.TP_nmds], dtype = float)
-    #     for i in range(self.TP_nmds):
-    #         j = self.Modes_list[i]
-    #         TPmodes[i] = self.TPs[m,n,j]
-    #         TPper[i] = TPmodes[i]/self.TP[m,n]
-    #     TPmodes2 = -np.sort(-TPmodes)
-    #     return TPmodes2,TPmodes,TPper
-    
-    # def Get_P(self,t):
-    #     P = np.zeros([self.nstates,1],dtype = float)
-    #     for m in range(self.nstates):
-    #         for i in range(self.nstates):
-    #             P[m] += self.lamda[i]*self.Vector[m,i]*np.exp(-self.rate[i]*t)
-    #     return P
-    
-    # def Analyse_Partition(self,scale):
-    #     P = np.empty([self.nstates,0],dtype = float)
-    #     t_Max = np.log(100)/self.rate[1]
-    #     t_Max = t_Max*scale
-    #     time = np.linspace(0,t_Max,11,endpoint=True,dtype = float)
-    #     for t in time:
-    #         P_temp = self.Get_P(t)
-    #         P = np.append(P,P_temp,axis = 1)
-    #     for i in range(self.nstates):
-    #         plt.plot(time,P[i,...],label="m = {x}".format(x = i))
-    #     plt.legend(bbox_to_anchor=(1, 0),loc=3,ncol=1)
-    #     plt.title("T = {x}K to {y}K".format(x = int(Tmin),y = int(Tmax))) 
-    #     plt.xlabel("time") 
-    #     plt.ylabel("p") 
-    #     plt.savefig("Partition.png",bbox_inches='tight')
-    #     plt.show()
         
     def RMsimulation(self):
         """
@@ -2126,10 +2044,6 @@ class TPs_Analyze(object):
         for i in range(0,self.nstates):
             if TP[i,0]>abs(TP[0,0])/10:
                 OBTPRD= np.append(OBTPRD,i)
-        #OBTPRD= np.append(OBTPRD,2)
-        #OBTPRD= np.append(OBTPRD,2)
-        #OBTPRD= np.append(OBTPRD,7)
-        #OBTPRD= np.append(OBTPRD,8)
         self.OBTPRrate = OBTPRrate
         self.OBTPRD = OBTPRD
         figOBT = plt.figure(num='FigOBT').add_subplot(111)
@@ -2138,7 +2052,6 @@ class TPs_Analyze(object):
         colormap = mpl.colormaps['plasma']
         cycles = 7
         CL_fmt = [colormap(i) for i in np.linspace(0, 1, cycles)]
-        #CL_fmt = ['purple','lemonchiffon','yellow','orange','orangered','red','crimson']
         cl = CL_fmt[0]
         for i in range(0,self.nstates):
             x = [Eigen.JAN[i]-0.4,Eigen.JAN[i]+0.4]
@@ -2157,16 +2070,6 @@ class TPs_Analyze(object):
                     x = [Eigen.JAN[i],Eigen.JAN[j]]
                     y = [Eigen.Vaules[i],Eigen.Vaules[j]]
                     plt.plot(x,y,color=cl)
-                    #x1 = int(np.log10(TPup[i]))
-                    #plt.plot(x,y,c=int(i/2),cmap='PuRd')
-#         for j in range(0,int(self.nstates/2-1)):
-#             i = int(self.nstates/2-1)-1-j
-#             #cl = CL_fmt[i]
-#             x1 = int(np.log10(TPup[2*i]))
-#             x2 = TPup[2*i]/(10**x1)
-#             ex = "{y}-{z}".format(y = x1-1,z = x1)
-#             La = "%1.2fe$^{%s}$"%(x2,ex)+"s$^{-1}$"
-#             #plt.scatter([],[],c=x1,s=100, cmap='PuRd')
         x1 = int(np.log10(TPup[0]))
         x2 = int(np.log10(TPup[13]))
         plt.legend(frameon=False)
@@ -2249,9 +2152,6 @@ class TPs_Analyze(object):
         for i in range(0,self.nstates):
             if TP[i,0]>abs(TP[0,0])/10:
                 RMTPRD= np.append(RMTPRD,i)
-        #RMTPRD= np.append(RMTPRD,1)
-        #RMTPRD= np.append(RMTPRD,2)
-        #RMTPRD= np.append(RMTPRD,4)
         self.RMTPRrate = RMTPRrate
         self.RMTPRD = RMTPRD
         figRMT = plt.figure(num='FigRMT').add_subplot(111)
@@ -2260,7 +2160,6 @@ class TPs_Analyze(object):
         colormap = mpl.colormaps['plasma']
         cycles = 8
         CL_fmt = [colormap(i) for i in np.linspace(0, 1, cycles)]
-        #CL_fmt = ['purple','lemonchiffon','yellow','orange','orangered','red','crimson']
         cl = CL_fmt[0]
         for i in range(0,self.nstates):
             x = [Eigen.JAN[i]-0.4,Eigen.JAN[i]+0.4]
@@ -2279,16 +2178,6 @@ class TPs_Analyze(object):
                     x = [Eigen.JAN[i],Eigen.JAN[j]]
                     y = [Eigen.Vaules[i],Eigen.Vaules[j]]
                     plt.plot(x,y,color=cl)
-                    #x1 = int(np.log10(TPup[i]))
-                    #plt.plot(x,y,c=int(i/2),cmap='PuRd')
-#         for j in range(0,int(self.nstates/2-1)):
-#             i = int(self.nstates/2-1)-1-j
-#             #cl = CL_fmt[i]
-#             x1 = int(np.log10(TPup[2*i]))
-#             x2 = TPup[2*i]/(10**x1)
-#             ex = "{y}-{z}".format(y = x1-1,z = x1)
-#             La = "%1.2fe$^{%s}$"%(x2,ex)+"s$^{-1}$"
-#             #plt.scatter([],[],c=x1,s=100, cmap='PuRd')
         x1 = int(np.log10(TPup[0]))
         x2 = int(np.log10(TPup[15]))
         plt.legend(frameon=False)
