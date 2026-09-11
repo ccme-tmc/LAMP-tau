@@ -132,7 +132,6 @@ class CAL_RELAX(object):
         self.Read_Static_effH()
         self.Analyse_Relax()
 
-
     def Read_input(self):
         pinput = self.pinput
         self.CFPs_filename = pinput['CFPs_filename']
@@ -261,8 +260,6 @@ class CAL_RELAX(object):
         
         density_spc(self.CFPs,self.mol,2000,"SPC_2k.png")
         density_spc_3D(self.CFPs,self.mol,1600,3.8,"dSPCdr")
-        #density_spc(CFPs,mol,2000,"SPC_2k.png")
-        #clear_output()
         return True
     
     def Analyse_Relax(self):
@@ -292,9 +289,6 @@ class CAL_RELAX(object):
         TPlabel = 0
         self.TP = []
         for T in self.T_list:
-            #Calculate_T(T,Modes_list,TPs_foldname)
-            #self.name = 'TP{x}'.format(x=TPlabel)
-            #print(locals()[self.name])
             self.TP.append(self.Calculate_T(T))
             
 
@@ -949,10 +943,6 @@ class CFPs_Analyze(object):
         """
         transform the \partial H/\partial x to \partial H/\partial Q
         """
-        #print(vecs.shape)
-        #print(self.B_slope.shape)
-        #print(self.B_slope.shape[0])
-        #print(self.nmds)
         Select_Atnum = np.loadtxt('inpfile/Atom_list',dtype=int)
         B_slope = np.zeros([self.nmds,27],dtype = float)
         B_slope_tot = np.zeros([self.nmds,self.xyznmd,27],dtype = float)
@@ -973,10 +963,7 @@ class CFPs_Analyze(object):
         """
         transform the \partial H/\partial x to \partial H/\partial Q
         """
-        #print(vecs.shape)
-        #print(self.B_slope.shape)
-        #print(self.B_slope.shape[0])
-        #print(self.nmds)
+
         First_Atnum = np.loadtxt('inpfile/First_list',dtype=int)
         number = First_Atnum.shape[0]
         B_slope = np.empty([self.nmds,27],dtype = float)
@@ -990,45 +977,6 @@ class CFPs_Analyze(object):
                 B_slope[i,j] = bstemp
         self.B_slope = B_slope
         return B_slope
-    
-    def transB_toxyz(self,mol):
-        """
-        transform the \partial H/\partial x to \partial H/\partial Q
-        """
-        #print(vecs.shape)
-        #print(self.B_slope.shape)
-        #print(self.B_slope.shape[0])
-        #print(self.nmds)
-        Select_Atnum = np.loadtxt('inpfile/Atom_list',dtype=int)
-        num_of_at_sl = Select_Atnum.shape[0]
-        hbar = 1.05457266
-        amu = 1.66053886
-        c = 2.9979
-        x_fac = np.sqrt( hbar / (amu * 2.0 * np.pi * c) ) * 10 ** 1.5
-        #num_of_at = mol.orig.get_number_of_atoms()
-        mass = np.empty([3*num_of_at_sl],dtype = float)
-        vecs_sl = np.empty([mol.vecs.shape[0],3*num_of_at_sl],dtype = float)
-        for j in range(0,num_of_at_sl):
-            mass[3*j] = atMass[symbols[mol.orig.get_atomic_numbers()[Select_Atnum[j]]]]
-            mass[3*j+1] = atMass[symbols[mol.orig.get_atomic_numbers()[Select_Atnum[j]]]]
-            mass[3*j+2] = atMass[symbols[mol.orig.get_atomic_numbers()[Select_Atnum[j]]]]
-            vecs_sl[...,3*j] = mol.vecs[...,Select_Atnum[j],0]
-            vecs_sl[...,3*j+1] = mol.vecs[...,Select_Atnum[j],1]
-            vecs_sl[...,3*j+2] = mol.vecs[...,Select_Atnum[j],2]
-        B_slopetr = np.empty([self.B_slope.shape[0],self.B_slope.shape[1]],dtype = float)
-        for imod in range(mol.freqs.size):
-            B_slopetr[imod,...] = self.B_slope[imod,...]*np.sqrt(mol.freqs[imod])
-        vecs_inv = scipy.linalg.pinv(vecs_sl)
-        #print(B_slopetr.shape)
-        #print(vecs_inv.shape)
-
-        B_slopexyz = np.einsum('ji, kj->ki', B_slopetr,vecs_inv)
-        for imod in range(0,B_slopexyz.shape[0]):
-            B_slopexyz[imod,...] = B_slopexyz[imod,...]*np.sqrt(mass[imod])/x_fac
-        self.B_slopexyz = B_slopexyz
-        #print(B_slopexyz)
-        np.savetxt('Bslope_trxyz',B_slopexyz)
-        return 1
 
 class Eigenstates(object):
     """
@@ -1335,23 +1283,6 @@ class Eigenstates(object):
             JAN[i] = jantemp
         self.JAN = JAN
         
-    def gen_J_number_old(self):
-        """
-        distribute the J angular for each state
-        """
-        JAN = np.empty([self.n_states], dtype = float)
-        for i in range(0,int(self.n_states/2)):
-            x1 = self.A[2*i,i]**2+self.B[2*i,i]**2
-            y1 = self.A[2*i,self.n_states-1-i]**2+self.B[2*i,self.n_states-i-1]**2
-            #x2 = self.A[2*i+1,i]**2+self.B[2*i+1,i]**2
-            #y2 = self.A[2*i+1,self.n_states-1-i]**2+self.B[2*i+1,self.n_states-i-1]**2
-            if x1>y1:
-                JAN[2*i] = -self.J+i
-                JAN[2*i+1] = self.J-i
-            else:
-                JAN[2*i] = self.J-i
-                JAN[2*i+1] = -self.J+i  
-        self.JAN = JAN
     
     def read_TO_matrix(self,TO_foldname):
         """
@@ -2441,124 +2372,6 @@ def green_OB(omega,omega1,sigma,T):
     #b2 = 1
     return a1*a2+b1*b2
 
-def gen_OBTPs_nd(CFPs,mol,Eigen,T,TPs_filename,Modes_list):
-    """
-    Generate the Transition probability matrix of each modes, output the matrix in foldname/T.tps
-    """
-    TP_nmds = Modes_list.shape[0]
-    TP = np.zeros([Eigen.n_states**2,Eigen.n_states**2,CFPs.nmds], dtype = complex)
-    with open(TPs_filename+".dat","w") as file:    
-        file.write("The Transparant Probilities\n")
-        file.write("Total modes {x}\n".format(x=CFPs.nmds))
-        file.write("Max total angular momentum {x}\n".format(x=Eigen.J))
-        file.write("If_select_sigma: {x} ".format(x=If_select_sigma))
-        if If_select_sigma:
-            file.write("select_sigma: {x}\n".format(x=select_sigma))
-        else:
-            file.write("\n")
-        for j in Modes_list:
-            file.write("modes {x}\n".format(x=j+1))
-            for x1 in range(0,Eigen.n_states**2):
-                for x2 in range(0,Eigen.n_states**2):
-                    if x1 < Eigen.n_states:
-                        a = x1
-                        b = x1
-                    else: 
-                        a = int((x1-1)/(Eigen.n_states-1))-1
-                        b = (x1-1)%(Eigen.n_states-1)+if_leq(int((x1-1)/(Eigen.n_states-1))-1,(x1-1)%(Eigen.n_states-1))
-                    if x2 < Eigen.n_states:
-                        c = x2
-                        d = x2
-                    else: 
-                        c = int((x2-1)/(Eigen.n_states-1))-1
-                        d = (x2-1)%(Eigen.n_states-1)+if_leq(int((x2-1)/(Eigen.n_states-1))-1,(x2-1)%(Eigen.n_states-1))
-                    omega_ac = Eigen.Vaules[a]-Eigen.Vaules[c]
-                    omega_bd = Eigen.Vaules[b]-Eigen.Vaules[d]
-                    if omega_ac-omega_bd<0.1 :
-                        V1 = Eigen.VP[a,c,j]
-                        V2 = Eigen.VP[d,b,j]
-                        VG3 = 0
-                        VG4 = 0
-                        omega1 = mol.freqs[j]
-                        if b == d:
-                            for e in range(0,Eigen.n_states):
-                                omega_ec = Eigen.Vaules[e]-Eigen.Vaules[c]
-                                VG3 = VG3 + Eigen.VP[a,e,j]*Eigen.VP[e,c,j]*green_OB(omega_ec,omega1,sigma,T)
-                        if a == c:
-                            for e in range(0,Eigen.n_states):
-                                omega_ec = Eigen.Vaules[e]-Eigen.Vaules[d]
-                                VG4 = VG4 + Eigen.VP[d,e,j]*Eigen.VP[e,b,j]*green_OB(omega_ec,omega1,sigma,T)
-                        G1 = green_OB(omega_ac,omega1,sigma,T)
-                        G2 = green_OB(omega_bd,omega1,sigma,T)
-                        #b = phonon_strain(Eigen.Vaules[f],Eigen.Vaules[i],abs(omega_if),T)
-                        #c = Rou_omega(abs(omega_if),omega1,sigma)
-                        Sum = np.pi**2*(V1*V2*(G1+G2)-VG3-VG4)*const.c*1e10
-                        TP[x1,x2,j] = Sum
-                    else:
-                        TP[x1,x2,j] = 0
-                    # if a==0 and b==0 and c==0 and d==0:
-                    #     print(j,V1*V2*(G1+G2),-VG3,-VG4,)
-                file.write(" ".join(str(s) for s in TP[x1,...,j])+"\n")
-    os.rename(TPs_filename+".dat",TPs_filename)
-    return TP
-
-def gen_OBTPs_ns(CFPs,mol,Eigen,T,TPs_filename,Modes_list):
-    """
-    Generate the Transition probability matrix of each modes, output the matrix in foldname/T.tps
-    """
-    TP_nmds = Modes_list.shape[0]
-    TP = np.zeros([Eigen.n_states**2,Eigen.n_states**2,CFPs.nmds], dtype = complex)
-    with open(TPs_filename+".dat","w") as file:    
-        file.write("The Transparant Probilities\n")
-        file.write("Total modes {x}\n".format(x=CFPs.nmds))
-        file.write("Max total angular momentum {x}\n".format(x=Eigen.J))
-        file.write("If_select_sigma: {x} ".format(x=If_select_sigma))
-        if If_select_sigma:
-            file.write("select_sigma: {x}\n".format(x=select_sigma))
-        else:
-            file.write("\n")
-        for j in Modes_list:
-            file.write("modes {x}\n".format(x=j+1))
-            for x1 in range(0,Eigen.n_states**2):
-                for x2 in range(0,Eigen.n_states**2):
-                    if x1 < Eigen.n_states:
-                        a = x1
-                        b = x1
-                    else: 
-                        a = int((x1-1)/(Eigen.n_states-1))-1
-                        b = (x1-1)%(Eigen.n_states-1)+if_leq(int((x1-1)/(Eigen.n_states-1))-1,(x1-1)%(Eigen.n_states-1))
-                    if x2 < Eigen.n_states:
-                        c = x2
-                        d = x2
-                    else: 
-                        c = int((x2-1)/(Eigen.n_states-1))-1
-                        d = (x2-1)%(Eigen.n_states-1)+if_leq(int((x2-1)/(Eigen.n_states-1))-1,(x2-1)%(Eigen.n_states-1))
-                    omega_ac = Eigen.Vaules[a]-Eigen.Vaules[c]
-                    omega_bd = Eigen.Vaules[b]-Eigen.Vaules[d]
-                    V1 = Eigen.VP[a,c,j]
-                    V2 = Eigen.VP[d,b,j]
-                    VG3 = 0
-                    VG4 = 0
-                    omega1 = mol.freqs[j]
-                    if b == d:
-                        for e in range(0,Eigen.n_states):
-                            omega_ec = Eigen.Vaules[e]-Eigen.Vaules[c]
-                            VG3 = VG3 + Eigen.VP[a,e,j]*Eigen.VP[e,c,j]*green_OB(omega_ec,omega1,sigma,T)
-                    if a == c:
-                        for e in range(0,Eigen.n_states):
-                            omega_ec = Eigen.Vaules[e]-Eigen.Vaules[d]
-                            VG4 = VG4 + Eigen.VP[d,e,j]*Eigen.VP[e,b,j]*green_OB(omega_ec,omega1,sigma,T)
-                    G1 = green_OB(omega_ac,omega1,sigma,T)
-                    G2 = green_OB(omega_bd,omega1,sigma,T)
-                    #b = phonon_strain(Eigen.Vaules[f],Eigen.Vaules[i],abs(omega_if),T)
-                    #c = Rou_omega(abs(omega_if),omega1,sigma)
-                    Sum = np.pi**2*(V1*V2*(G1+G2)-VG3-VG4)*const.c*1e10
-                    TP[x1,x2,j] = Sum
-                    # if a==0 and b==0 and c==0 and d==0:
-                    #     print(j,V1*V2*(G1+G2),-VG3,-VG4,)
-                file.write(" ".join(str(s) for s in TP[x1,...,j])+"\n")
-    os.rename(TPs_filename+".dat",TPs_filename)
-    return TP
 
 def calculate_angle_between_lines(d1, d2):
     """
@@ -2603,7 +2416,7 @@ def get_RM_VP(Eigen,f,i,j,k,omega1,omega2):
     a = 0
     for c in range(0,Eigen.n_states):
         if Eigen.Vaules[c]<5000:
-            a += Eigen.VP[f,c,j]*Eigen.VP[c,i,k]/(Eigen.Vaules[c]-Eigen.Vaules[i]+omega2)+Eigen.VP[f,c,k]*Eigen.VP[c,i,j]/(Eigen.Vaules[c]-Eigen.Vaules[i]-omega1)
+            a += Eigen.VP[f,c,j]*Eigen.VP[c,i,k]/(Eigen.Vaules[c]-Eigen.Vaules[i]+omega2-6*1j)+Eigen.VP[f,c,k]*Eigen.VP[c,i,j]/(Eigen.Vaules[c]-Eigen.Vaules[i]-omega1-6*1j)
     return get_Mod_square(a)
 
 def get_Modes_list1(nmds,Eigen,mol,select_sigma):
@@ -2834,59 +2647,6 @@ def density_spc_3D(CFPs,mol,maxlim,maxAA,filename):
     #np.savetxt(filename+'.txt',y)
     
     plt.show()
-
-def SPC_gtensor(CFPs):
-    nmds = CFPs.nmds
-    npts = CFPs.npts
-    Line_Bkq = np.empty((0,),dtype = float)
-    Line_gz = np.empty((0,),dtype = float)
-    Line_gtheta = np.empty((0,),dtype = float)
-    Line_gmol = np.empty((0,),dtype = float)
-    theta_2 = -2/315
-    theta_4 = -8/135135
-    theta_6 = 4/3864861
-    for i in range(0,nmds):
-        for j in range(0,npts):
-            if CFPs.Bkq[i,j,0] == 0:
-                print(i,j)
-                continue
-            else:
-                tempBkq = 0
-                for k in range(0,5):
-                    tempBkq += CFPs.Bkq[i,j,k]/theta_2
-                for k in range(5,14):
-                    tempBkq += CFPs.Bkq[i,j,k]/theta_4
-                for k in range(14,27):
-                    tempBkq += CFPs.Bkq[i,j,k]/theta_6
-                vecmol = np.sqrt(CFPs.dgvec[i,j,0]**2+CFPs.dgvec[i,j,1]**2+CFPs.dgvec[i,j,2]**2)
-                Line_Bkq = np.append(Line_Bkq,np.abs(tempBkq))
-                Line_gz = np.append(Line_gz,CFPs.dgz[i,j])
-                Line_gtheta = np.append(Line_gtheta,CFPs.dgtheta[i,j])
-                Line_gmol = np.append(Line_gmol,vecmol)
-
-    figgz = plt.figure(num='Figgz').add_subplot(111)
-    plt.figure("Figgz")
-    plt.scatter(Line_Bkq, Line_gz)
-    figgz.set_title("SPC to gz") 
-    figgz.set_xlabel("$B^{SPC}_{kq}$ (cm$^{-1}$)") 
-    figgz.set_ylabel("$Delta gz$ (cm$^{-1}$)") 
-
-    figgtheta = plt.figure(num='Figgthe').add_subplot(111)
-    plt.figure("Figgthe")
-    plt.scatter(Line_Bkq, Line_gtheta)
-    figgtheta.set_title("SPC to gtheta") 
-    figgtheta.set_xlabel("$B^{SPC}_{kq}$ (cm$^{-1}$)") 
-    figgtheta.set_ylabel("$Delta gz$ (cm$^{-1}$)") 
-    plt.show()
-
-    figgtt = plt.figure(num='Figgtt').add_subplot(111)
-    plt.figure("Figgtt")
-    plt.scatter(Line_Bkq, Line_gmol)
-    figgtt.set_title("SPC to gtt") 
-    figgtt.set_xlabel("$B^{SPC}_{kq}$ (cm$^{-1}$)") 
-    figgtt.set_ylabel("Delta gvec") 
-    plt.show()
-    return Line_Bkq,Line_gz,Line_gtheta
 
 def density_spc_xyz(B_slope_xyz,mol,filename):
     Select_Atnum = np.loadtxt('inpfile/Atom_list',dtype=int)
