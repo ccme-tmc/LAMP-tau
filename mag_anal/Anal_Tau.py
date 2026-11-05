@@ -1959,7 +1959,7 @@ class TPs_Analyze(object):
                 TPs_Analyze.Pcross_list = np.append(TPs_Analyze.Pcross_list,self.Pcross)
                 return P_states[1]
 
-    def Mod_Analyse_OB(self):
+    def Mod_Analyse_OB(self,ratio=10):
         T = self.T
         OBTPrate= np.zeros([self.nstates],dtype = float) #total rate for every column
         TP = self.OBTP
@@ -1973,7 +1973,7 @@ class TPs_Analyze(object):
         OBTPRrate = OBTPrate/OBTPrate[0] #relative rate for every column
         OBTPRD = np.empty((0,),dtype = int) #rate-determine step for column 1
         for i in range(0,self.nstates):
-            if TP[i,0]>abs(TP[0,0])/10:
+            if TP[i,0]>abs(TP[0,0])/ratio:
                 OBTPRD= np.append(OBTPRD,i)
         self.OBTPRrate = OBTPRrate
         self.OBTPRD = OBTPRD
@@ -1995,7 +1995,7 @@ class TPs_Analyze(object):
                 if abs(Eigen.JAN[i]) > abs(Eigen.JAN[k]):
                     TPup[i] += TP[k,i]
             for j in range(0,self.nstates):
-                if TP[j,i]>abs(TPup[i])/10 and abs(Eigen.JAN[i])>=abs(Eigen.JAN[j]):
+                if TP[j,i]>abs(TPup[i])/ratio and abs(Eigen.JAN[i])>=abs(Eigen.JAN[j]):
                     #print('%1.2e'%TP[j,i])
                     cl = CL_fmt[int(i/2)]
                     x = [Eigen.JAN[i],Eigen.JAN[j]]
@@ -2067,7 +2067,7 @@ class TPs_Analyze(object):
                 #print('%1.0f'%Datas[0],'%1.1f'%Datas[1],'%1.2e'%Datas[2],'%1.2e'%Datas[3],'%1.2e'%Datas[4],'%1.2e'%Datas[5],'%1.2e'%Datas[6])
             print(table)
       
-    def Mod_Analyse_RM(self):
+    def Mod_Analyse_RM(self,ratio=10):
         T = self.T
         RMTPrate= np.zeros([self.nstates],dtype = float) #total rate for every column
         TP = self.RMTP
@@ -2081,7 +2081,7 @@ class TPs_Analyze(object):
         RMTPRrate = RMTPrate/RMTPrate[0] #relative rate for every column
         RMTPRD = np.empty((0,),dtype = int) #rate-determine step for column 1
         for i in range(0,self.nstates):
-            if TP[i,0]>abs(TP[0,0])/10:
+            if TP[i,0]>abs(TP[0,0])/ratio:
                 RMTPRD= np.append(RMTPRD,i)
         self.RMTPRrate = RMTPRrate
         self.RMTPRD = RMTPRD
@@ -2103,7 +2103,7 @@ class TPs_Analyze(object):
                 if abs(Eigen.JAN[i]) >= abs(Eigen.JAN[k]) and  i != k:
                     TPup[i] += TP[k,i]
             for j in range(0,self.nstates):
-                if TP[j,i]>abs(TPup[i])/10 and abs(Eigen.JAN[i])>=abs(Eigen.JAN[j]) and j != i:
+                if TP[j,i]>abs(TPup[i])/ratio and abs(Eigen.JAN[i])>=abs(Eigen.JAN[j]) and j != i:
                     #print('%1.2e'%TP[j,i])
                     cl = CL_fmt[int(i/2)]
                     x = [Eigen.JAN[i],Eigen.JAN[j]]
