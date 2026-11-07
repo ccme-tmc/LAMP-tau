@@ -15,20 +15,19 @@ cp $RTP/sh/clean_pyscf.sh perb/clean.sh
 chmod +x perb/subjob.sh
 
 cd $prefix/eq
-python $UPP/insert_xyz.py --tmp $RTP/inpfile/dmet_tmp.py --xyz eq.xyz -o dmet_cassiso.py -c $i_charge -t $name 
+python $UPP/insert_xyz.py --tmp $RTP/inpfile/dmet_tmp.py.tmpl --xyz eq.xyz -o dmet_cassiso.py -c $i_charge -t $name
 chmod +x dmet_cassiso.py
 cp $RTP/sh/jobeq_pyscf.sh ./jobeq.sh
 cd ../../
 echo "---------------------------------eq----------------------------------------"
 
-3for ((imod=22;imod<=$num_freq;imod++));do
-for imod in $(seq 1 $num_freq);do 
+for imod in $(seq 1 $num_freq);do
 	cd $prefix/$imod
 		cp $RTP/sh/job_pyscf.sh ./pyjob.sh
 	cd ../../
 	for ipt in $(seq 1 $num_pt); do
 		cd $prefix/$imod/$ipt
-			python $UPP/insert_xyz.py --tmp $RTP/inpfile/dmet_tmp.py --xyz mol_${imod}_${ipt}.xyz -o dmet_cassiso.py -c $i_charge -t $name
+			python $UPP/insert_xyz.py --tmp $RTP/inpfile/dmet_tmp.py.tmpl --xyz mol_${imod}_${ipt}.xyz -o dmet_cassiso.py -c $i_charge -t $name
 			#rm !(*.py|*.xyz)
 			chmod +x dmet_cassiso.py
 		cd ../

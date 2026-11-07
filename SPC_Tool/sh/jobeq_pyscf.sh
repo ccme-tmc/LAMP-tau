@@ -1,23 +1,22 @@
 #!/bin/bash
 #SBATCH -o stdout
-#SBATCH --partition=cp4
+#SBATCH --partition=YOUR_PARTITION
 #SBATCH -J Dyf_Coeq
 #SBATCH --get-user-env
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=56
 #SBATCH --mail-type=end
-#SBATCH --mail-user=sunhuaiyang@pku.edu.cn
+#SBATCH --mail-user=YOUR_EMAIL
 #SBATCH --time=100:00:00
 
-#bin="/THL6/home/jiangh/program/vasp.5.4.4/bin/vasp_std"
 module purge
-module load AiYH_code/0607-dyf
+# module load AiYH_code/0607-dyf  # install LAMP_emb and set PYTHONPATH instead
 #module load loginnode
 #export MOLCAS_MEM=50000
 #export OMP_NUM_THREADS=56
-#export PYTHONPATH=/fs2/home/jiangh/program/AiYH_Code_20230607/
+#export PYTHONPATH=/path/to/LAMP_emb
 
-source activate pyscf
+# source activate pyscf  # activate the environment containing PySCF and LAMP_emb
 
 shopt -s extglob
 

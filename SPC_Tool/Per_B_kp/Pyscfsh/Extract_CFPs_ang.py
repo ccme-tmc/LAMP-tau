@@ -1,5 +1,4 @@
-#!/fs2/software/python/3.9_anaconda_2022.05/bin/python3
-#/THL6/home/jiangh/members/lisx/install_lisx/anaconda3/bin/python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 import numpy as np

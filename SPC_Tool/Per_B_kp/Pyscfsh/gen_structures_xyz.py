@@ -1,5 +1,4 @@
-#!/home/dengyf/.conda/envs/my_env/bin/python
-#/THL6/home/jiangh/members/lisx/install_lisx/anaconda3/bin/python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 import numpy as np
@@ -65,17 +64,6 @@ atMass = {
 
 
 def count_string(string, filename):
-    """
-        return the number of appearances of string in the file filename
-    """
-    cmd = "n=`grep " + '"' + string + '" ' + filename + " | wc -l` && echo $n > tmp.dat"
-    os.system(cmd)
-    with open("tmp.dat") as f:
-        n = int(f.readline().split()[0])
-    os.system("rm tmp.dat")
-    return n 
-
-def count_string2(string, filename):
     """
         return the number of appearances of string in the file filename
     """

@@ -1,4 +1,4 @@
-#!/home/dengyf/.conda/envs/my_env/bin/python
+#!/usr/bin/env python3
 #/usr/bin/python3
 # coding: utf-8
 
@@ -32,14 +32,14 @@ parser.add_argument("--inpfile", required=True, help="The foldname of inpfile.")
 args = parser.parse_args()
 
 
-dpxs = np.loadtxt(args.inpfile+"/dpxs")
-origcell = read(args.inpfile+"/POSCAR")
+dpxs = np.atleast_2d(np.loadtxt(args.inpfile + "/dpxs"))
+origcell = read(args.inpfile + "/POSCAR")
 cell = origcell.get_cell()
 
 orig = read(args.inp)
-list1 = np.loadtxt(args.inpfile+"/Atom_list",dtype = int)
-li = list1.split()
-Reserve_Atnum = np.asarray(li,dtype=int)
+Reserve_Atnum = np.atleast_1d(
+    np.loadtxt(args.inpfile + "/Atom_list", dtype=float)
+).astype(int)
 num = Reserve_Atnum[0]
 positions = tuple(orig.get_positions()[num])+dpxs[num,0]*cell[0,...]+dpxs[num,1]*cell[1,...]+dpxs[num,2]*cell[2,...]
 new = Atoms(orig.get_chemical_symbols()[Reserve_Atnum[0]],[positions])

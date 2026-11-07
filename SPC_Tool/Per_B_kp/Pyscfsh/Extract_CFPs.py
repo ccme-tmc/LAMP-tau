@@ -1,5 +1,4 @@
-#!/fs2/software/python/3.9_anaconda_2022.05/bin/python3
-#/THL6/home/jiangh/members/lisx/install_lisx/anaconda3/bin/python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 import numpy as np
@@ -100,13 +99,14 @@ def get_Modes_list(nmds,Eigen,mol,select_sigma):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="""
-        A script to extract the perturbation CFPs from a single_aniso calculation done in MOLCAS.
-        The path of outfile should be "perb/x/y/mag_x_y.log", 
-        and the path of eq outfile should be "name/eq.out" where name is the main fold path you should input; 
-        "x" means the number of vb mode, from 1 to max;"y" means the number of points of each mode, from 1 to max. """)
+        Extract the perturbation CFPs from the per-displacement calculations.
+        The per-point output is read from <prefix>/<mode>/<point>/<stdout>.""")
     parser.add_argument("--eqlog", "-el", dest="eqlog", required=True, help="The path of your eq structure mag file.")
     parser.add_argument("--nmds", "-nd", dest="nmds", type=int, required=True, help="Number of vibration modes.")
     parser.add_argument("--npts", "-np", dest="npts", type=int, default=10, help="Number of points along each modes. Default is 10.")
+    parser.add_argument("--prefix", dest="prefix", default="perb", help="Directory containing the per-displacement calculations (default: perb).")
+    parser.add_argument("--stdout", dest="stdout", default="stdout1", help="Name of the per-point output file (default: stdout1).")
+    parser.add_argument("--out", dest="out", default="CFPs.out", help="Output CFP file (default: CFPs.out).")
     parser.add_argument("--verbose", "-v", action="store_true", help="print out more information of the structures for debugging purpose.")
     args = parser.parse_args()
     
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     B2t = np.zeros([5], dtype = float)   #B_kq,where k = 2
     B4t = np.zeros([9], dtype = float)   #B_kq,where k = 4
     B6t = np.zeros([13], dtype = float)  #B_kq,where k = 6
-    with open("CFPs.out","w") as f:
+    with open(args.out,"w") as f:
         f.write("The Perturbation CFPs\n")
         f.write("Total modes {x}\n".format(x=args.nmds))
         f.write("Total points {y}\n".format(y=args.npts))
@@ -163,7 +163,9 @@ if __name__ == "__main__":
             for ipt in range(0,args.npts):
                 print("Working on the Mode {x} Point {y}".format(x=imod+1,y=ipt+1))
                 f.write("Mode {x} Point {y}\n".format(x=imod+1,y=ipt+1))
-                mag_filename = "perb/{x}/{y}/stdout1".format(x=imod+1,y=ipt+1)
+                mag_filename = os.path.join(
+                    args.prefix, str(imod + 1), str(ipt + 1), args.stdout
+                )
                 try:
                     f2 =open(mag_filename,"r")
                     f2.close()

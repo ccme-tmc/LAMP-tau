@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use LAMP-tau, please cite the paper and the archived release below."
+title: "LAMP-tau"
+abstract: "Python tools for ab initio spin-phonon relaxation simulation of single-ion magnets: DMET+CASSCF-SO, crystal-field parameters, g tensors, spin-phonon coupling and relaxation times."
+version: "1.0.0"
+date-released: "2026-11-07"
+license: MIT
+repository-code: "https://github.com/Dengyf98/LAMP_tau"
+url: "https://github.com/Dengyf98/LAMP_tau"
+keywords:
+  - single-ion magnets
+  - spin-phonon coupling
+  - density matrix embedding theory
+  - CASSCF
+  - magnetic relaxation
+authors:
+  - family-names: "Deng"
+    given-names: "Yifan"
+  - name: "LAMP-tau contributors"
+preferred-citation:
+  type: article
+  title: "Accelerating ab initio spin-phonon relaxation simulation of single-ion magnets by quantum embedding and spatial truncation"
+  authors:
+    - family-names: "Deng"
+      given-names: "Yifan"
+    - name: "and co-workers"
+  year: 2026
+  journal: "The Journal of Chemical Physics"
+  # DOI: to be completed after publication
+# identifiers:
+#   - type: doi
+#     value: 10.5281/zenodo.XXXXXXX

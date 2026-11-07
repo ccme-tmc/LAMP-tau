@@ -1,0 +1,13 @@
+# Normalise line endings for a cross-platform repository.
+* text=auto
+
+*.py text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.cff text eol=lf
+*.tex text eol=lf
+*.in text eol=lf
+*.INCAR text eol=lf
+*.eso text eol=lf

@@ -1,0 +1,13 @@
+# Core runtime dependencies (the analysis module `mag_anal`)
+numpy>=1.24
+scipy>=1.10
+PyYAML>=6.0
+prettytable>=3.0
+matplotlib>=3.7
+ase>=3.22
+sympy>=1.10
+
+# Optional: needed only for the DMET+CASSCF-SO / CFP-generation part of SPC_Tool
+# pyscf>=2.3
+# basis_set_exchange
+# LAMP_emb: https://github.com/ZGuan97/LAMP_emb (install separately; not vendored here)

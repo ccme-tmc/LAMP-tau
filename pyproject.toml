@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lamp-tau"
+version = "1.0.0"
+description = "Ab initio spin-phonon relaxation analysis for single-ion magnets (DMET+CASSCF-SO workflow)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "LAMP-tau contributors" }]
+keywords = ["single-ion magnets", "spin-phonon coupling", "DMET", "CASSCF", "relaxation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "PyYAML",
+    "prettytable",
+    "matplotlib",
+    "ase",
+    "sympy",
+]
+
+[project.optional-dependencies]
+pyscf = ["pyscf", "basis_set_exchange"]
+dev = ["pytest", "ruff", "shellcheck-py"]
+
+[project.scripts]
+lamp-tau = "mag_anal.Anal_Tau:main"
+
+[tool.setuptools]
+packages = ["mag_anal"]
+license-files = ["LICENSE"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"

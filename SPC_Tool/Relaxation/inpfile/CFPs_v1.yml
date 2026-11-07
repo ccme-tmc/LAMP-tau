@@ -1,3 +1,5 @@
+# Legacy format example. For a runnable example see
+# examples/relaxation/CFPs_v1.yml in the repository root.
 #the filename you need input
 CFPs_filename: inpfile/CFPs_py.out        #The disturbed CFPs B_kq
 mag_filename: inpfile/eqpyout            #The magnetic calculation of the eq structure

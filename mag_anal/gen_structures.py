@@ -1,5 +1,4 @@
-#!/home/dengyf/.conda/envs/my_env/bin/python
-#/THL6/home/jiangh/members/lisx/install_lisx/anaconda3/bin/python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 import numpy as np
@@ -63,17 +62,6 @@ atMass = {
 }
 
 
-
-def count_string2(string, filename):
-    """
-        return the number of appearances of string in the file filename
-    """
-    cmd = "n=`grep " + '"' + string + '" ' + filename + " | wc -l` && echo $n > tmp.dat"
-    os.system(cmd)
-    with open("tmp.dat") as f:
-        n = int(f.readline().split()[0])
-    os.system("rm tmp.dat")
-    return n 
 
 def count_string(string, filename):
     """
@@ -286,17 +274,21 @@ displacement vectors.
 # the actual work is done here. 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="""
-        A script to generate structures perturbed along normal modes 
-        provided by a freq calculation done in Gaussian.""")
-
-    parser.add_argument("--pos", dest="posfile", required=True, help="The filename of poscar.")
+        A script to generate structures perturbed along the normal modes
+        contained in a VASP frequency output file.""")
+    parser.add_argument("--out", dest="outfile", required=True,
+                        help="The VASP frequency output file (freq.log).")
+    parser.add_argument("--pos", dest="posfile", required=True,
+                        help="The equilibrium structure (POSCAR).")
     parser.add_argument("--npts", "-np", dest="npts", type=int, default=10, help="Number of points along each modes. Default is 10.")
     parser.add_argument("--maxdp", "-mdp", dest="mdp", type=float, default=1, help="The max displacement of each modes. Default is 1.")
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="Print atom numbers, frequencies and displacement vectors.")
     args = parser.parse_args()
-    
-    mol = mol_freq(args.posfile) 
+
+    mol = mol_freq(args.outfile, args.posfile)
     mol.read_geometry()
-    mol.read_modes()
+    mol.read_modes_vasp()
     if args.verbose:
         print("atom numbers:\n", mol.orig.get_number_of_atoms(), "\n")
         print("atom equilibrium coordinates (A):\n", mol.crds, "\n")  
