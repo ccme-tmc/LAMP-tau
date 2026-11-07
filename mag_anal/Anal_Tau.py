@@ -554,17 +554,33 @@ class CFPs_Analyze(object):
         self.atom_list = atom_list
         self.first_list = first_list
 
+    @staticmethod
+    def _read_cfp_header(file):
+        """Read 'Total modes' / 'Total points', tolerating blank lines."""
+        nmds = npts = None
+        for _ in range(10):
+            line = file.readline()
+            if not line:
+                break
+            parts = line.split()
+            if len(parts) >= 3 and parts[1] == "modes":
+                nmds = int(parts[2])
+            elif len(parts) >= 3 and parts[1] == "points":
+                npts = int(parts[2])
+            if nmds is not None and npts is not None:
+                break
+        if nmds is None or npts is None:
+            raise ValueError(
+                "Could not find 'Total modes'/'Total points' in the CFP file."
+            )
+        return nmds, npts
+
     def read_CFPs(self):
         """
         read CFPs, number of modes, and the number of points from the file filename
         """
         with open(self.filename,"r") as file:
-            line = file.readline()
-            line = file.readline()
-            line = file.readline()
-            nmds = int(line.split()[2])
-            line = file.readline()
-            npts = int(line.split()[2])
+            nmds, npts = self._read_cfp_header(file)
             B = np.empty([nmds,npts,27], dtype = float)
             B2 = np.empty([5], dtype = float)   #B_kq,where k = 2
             B4 = np.empty([9], dtype = float)   #B_kq,where k = 4
@@ -593,12 +609,7 @@ class CFPs_Analyze(object):
         read CFPs, number of modes, and the number of points from the file filename
         """
         with open(self.filename,"r") as file:
-            line = file.readline()
-            line = file.readline()
-            line = file.readline()
-            nmds = int(line.split()[2])
-            line = file.readline()
-            npts = int(line.split()[2])
+            nmds, npts = self._read_cfp_header(file)
             B = np.empty([nmds,npts,27], dtype = float)
             B2 = np.empty([5], dtype = float)   #B_kq,where k = 2
             B4 = np.empty([9], dtype = float)   #B_kq,where k = 4
@@ -782,10 +793,11 @@ class CFPs_Analyze(object):
         B = self.Bkq
         with open(filename,"w") as file:
             file.write("The Perturbation CFPs\n")
+            file.write("\n")
             file.write("Total modes {x}\n".format(x=self.nmds))
             file.write("Total points {y}\n".format(y=self.npts))
             for imod in range(0,self.nmds):
-                for ipt in range(0,5):
+                for ipt in range(0,self.npts):
                     print("Working on the Mode {x} Point {y}".format(x=imod+1,y=ipt+1))
                     file.write("Mode {x} Point {y}\n".format(x=imod+1,y=ipt+1))
                     B2 = B[imod,ipt,0:5]
@@ -2019,7 +2031,7 @@ class TPs_Analyze(object):
         figOBT.set_title("Transition rate for Orbach at {T} K".format(T = T))
         figOBT.set_xlabel("<J$_Z$>")
         figOBT.set_ylabel("Energy (cm$^{-1}$)")
-        plt.savefig("OBTrans.eps",bbox_inches='tight')
+        plt.savefig(os.path.join(self.RELAX.Out_foldname, "OBTrans.eps"), bbox_inches='tight')
         im2 = plt.matshow(self.OBTPP,  cmap = plt.cm.Blues)
         cb = plt.colorbar(im2)
         plt.show()
@@ -2127,7 +2139,7 @@ class TPs_Analyze(object):
         figRMT.set_title("Transition rate for Raman at {T} K".format(T = T))
         figRMT.set_xlabel("<J$_Z$>")
         figRMT.set_ylabel("Energy (cm$^{-1}$)")
-        plt.savefig("RMTrans.eps",bbox_inches='tight')
+        plt.savefig(os.path.join(self.RELAX.Out_foldname, "RMTrans.eps"), bbox_inches='tight')
 
         im2 = plt.matshow(self.RMTPP,  cmap = plt.cm.Blues)
         cb = plt.colorbar(im2)
@@ -2155,7 +2167,7 @@ class TPs_Analyze(object):
             Trans = np.append(Trans,1-np.sum(Trans))
             figRMpie.pie(Trans,labels=Nmds,autopct='%.1f%%', )
             figRMpie.set_title("Transition probability [{x},0] for Raman at {T}K".format(x = i,T = self.T))
-            plt.savefig("RMPie.eps",bbox_inches='tight')
+            plt.savefig(os.path.join(self.RELAX.Out_foldname, "RMPie.eps"), bbox_inches='tight')
             plt.show()
 
             size = np.shape(Nmdsc1)[0]

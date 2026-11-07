@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LAMP-tau User Manual</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+    max-width: 190mm;
+    margin: 0 auto;
+  }
+  h1 { font-size: 22pt; border-bottom: 2px solid #333; padding-bottom: 4px; }
+  h2 { font-size: 15pt; margin-top: 1.4em; border-bottom: 1px solid #bbb; }
+  h3 { font-size: 12.5pt; margin-top: 1.1em; }
+  code { font-family: "Cascadia Mono", "Consolas", monospace; font-size: 9pt;
+          background: #f2f2f2; padding: 0 3px; border-radius: 3px; }
+  pre { background: #f7f7f7; border: 1px solid #ddd; padding: 8px;
+         overflow-x: auto; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 0.8em 0;
+           font-size: 9.5pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; }
+  th { background: #eee; }
+  blockquote { border-left: 4px solid #999; margin: 1em 0; padding: 0.2em 1em;
+                background: #fafafa; }
+  a { color: #0b5cad; text-decoration: none; }
+  hr { border: 0; border-top: 1px solid #ccc; margin: 2em 0; }
+  ul, ol { padding-left: 1.6em; }
+</style>
+</head>
+<body>
+<h1 id="lamp-tau-user-manual">LAMP-tau User Manual</h1>
+<blockquote>
+<p><strong>中文摘要</strong>：本手册面向 LAMP-tau 的使用者，按“安装 → 快速开始 → 完整 SPC 工作流 → YAML/文件格式 → 输出文件 → Python API → HPC → 故障排查”的顺序组织。可运行的 DyAC 示例在 <code>examples/relaxation/</code>；英文文档 <code>docs/</code> 与本书内容一致。若只关心弛豫时间分析，直接阅读第 4、6、8 节即可。</p>
+</blockquote>
+<p>Version 1.0.0 — accompanying the manuscript
+<em>Accelerating ab initio spin-phonon relaxation simulation of single-ion magnets by quantum embedding and spatial truncation</em> (J. Chem. Phys., 2026).</p>
+<hr>
+<h2 id="1-overview">1. Overview</h2>
+<p>LAMP-tau is a Python toolkit for <em>ab initio</em> spin-phonon relaxation simulation of single-ion magnets (SIMs). It has two parts:</p>
+<ul>
+<li><strong><code>mag_anal</code></strong> — analysis of electronic-structure results: crystal-field parameters (CFPs), effective spin Hamiltonian, <em>g</em> tensors, spin-phonon coupling (SPC) matrix elements and relaxation times τ(T).</li>
+<li><strong><code>SPC_Tool</code></strong> — scripts that prepare and organise the underlying calculations: VASP phonons, displaced structures, DMET+CASSCF-SO (PySCF) or CASSCF (OpenMolcas) inputs, and CFP extraction.</li>
+</ul>
+<p>The electronic-structure workflow is</p>
+<pre><code>VASP phonons ──► displaced structures ──► DMET+CASSCF-SO / CASSCF ──► CFPs
+                                                                      │
+                                                     SPC parameters ◄─┘
+                                                            │
+                                                            ▼
+                                                         τ(T), Ueff, τ0
+</code></pre>
+<p><code>mag_anal</code> is the part used in step 4–5; <code>SPC_Tool</code> covers steps 1–3.</p>
+<h3 id="11-requirements-at-a-glance">1.1 Requirements at a glance</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>≥ 3.10 (the code uses <code>match</code>/<code>case</code>)</td>
+</tr>
+<tr>
+<td>Core Python packages</td>
+<td>NumPy, SciPy, PyYAML, prettytable, Matplotlib, ASE, SymPy</td>
+</tr>
+<tr>
+<td>DMET+CASSCF-SO</td>
+<td>PySCF, <code>basis_set_exchange</code>, <a href="https://github.com/ZGuan97/LAMP_emb">LAMP-emb</a> (<code>embed_sim</code>)</td>
+</tr>
+<tr>
+<td>Phonons</td>
+<td>VASP (periodic) or a molecular Hessian (e.g. ORCA)</td>
+</tr>
+<tr>
+<td>Alternative electronic structure</td>
+<td>OpenMolcas (for the Molcas path)</td>
+</tr>
+<tr>
+<td>Scheduler</td>
+<td>Slurm, PBS or Tianhe; the shipped <code>.sh</code> files are templates</td>
+</tr>
+</tbody>
+</table>
+<p>VASP, OpenMolcas and ORCA are external programs and are <strong>not</strong> distributed with LAMP-tau.</p>
+<hr>
+<h2 id="2-installation">2. Installation</h2>
+<h3 id="21-from-a-clone">2.1 From a clone</h3>
+<pre><code class="language-bash">git clone https://github.com/Dengyf98/LAMP_tau.git
+cd LAMP_tau
+python -m pip install -e .
+</code></pre>
+<p>This installs the <code>mag_anal</code> package and the <code>lamp-tau</code> command. If you only need the analysis part:</p>
+<pre><code class="language-bash">python -m pip install -r requirements.txt
+</code></pre>
+<h3 id="22-lamp-emb-and-pyscf">2.2 LAMP-emb and PySCF</h3>
+<p>The DMET part uses the <code>embed_sim</code> package from LAMP-emb:</p>
+<pre><code class="language-bash">git clone https://github.com/ZGuan97/LAMP_emb.git
+export PYTHONPATH=/path/to/LAMP_emb:$PYTHONPATH
+python -m pip install pyscf basis_set_exchange
+</code></pre>
+<p><code>dmet_tmp.py.tmpl</code> imports <code>embed_sim.myavas</code>, <code>ssdmet</code>, <code>siso</code>, <code>sacasscf_mixer</code> and <code>rdiis</code>.</p>
+<h3 id="23-check-the-installation">2.3 Check the installation</h3>
+<pre><code class="language-bash">lamp-tau --help
+python -c &quot;import mag_anal; print(mag_anal.__version__)&quot;
+</code></pre>
+<p>On a headless machine set:</p>
+<pre><code class="language-bash">export MPLBACKEND=Agg
+</code></pre>
+<h3 id="24-optional-development-tools">2.4 Optional development tools</h3>
+<pre><code class="language-bash">python -m pip install -e &quot;.[dev]&quot;   # pytest, ruff
+python -m pytest tests -q
+</code></pre>
+<hr>
+<h2 id="3-repository-layout">3. Repository layout</h2>
+<pre><code>LAMP_tau/
+├── mag_anal/
+│   ├── Anal_Tau.py          # τ(T) analysis; CLI entry point
+│   ├── psh.py               # pseudospin Hamiltonian, g tensors, CFP projection
+│   ├── gen_structures.py    # displaced structures from phonon modes
+│   ├── Select_group.py      # molecular-group selection / spatial truncation
+│   └── dictionary.py        # element/mass dictionaries
+├── SPC_Tool/
+│   ├── inpfile/             # input templates (VASP, PySCF, OpenMolcas)
+│   ├── opt_freq/vaspsh/     # VASP geometry optimisation and frequencies
+│   ├── Per_B_kp/Pyscfsh/    # displaced structures, inputs, CFP extraction
+│   ├── sh/                  # scheduler templates
+│   ├── Relaxation/          # legacy example configuration
+│   └── manual/              # Chinese manual (LaTeX + PDF)
+├── examples/relaxation/     # runnable DyAC example
+├── docs/                    # workflow, formats, HPC and data notes
+├── tests/                   # smoke test
+├── pyproject.toml
+├── requirements.txt
+├── CITATION.cff
+└── LICENSE
+</code></pre>
+<hr>
+<h2 id="4-quick-start-relaxation-analysis-dyac">4. Quick start: relaxation analysis (DyAC)</h2>
+<p>The shipped example uses DyAC and runs from the repository root.</p>
+<pre><code class="language-bash">lamp-tau --yml examples/relaxation/CFPs_v1.yml
+</code></pre>
+<p>or, without installing:</p>
+<pre><code class="language-bash">python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+</code></pre>
+<p>What happens:</p>
+<ol>
+<li><code>Read_input</code> parses the YAML file and creates <code>Out_foldname</code>.</li>
+<li><code>Read_freq</code> reads <code>freq.log</code>/<code>POSCAR</code> and builds the phonon modes.</li>
+<li><code>Read_CFPs</code> reads <code>CFPs_py.out</code> and fits ∂B<sub>kq</sub>/∂Q.</li>
+<li><code>Read_Static_effH</code> reads the equilibrium output (<code>eqpyout</code>) and the tensor-operator matrices.</li>
+<li><code>Analyse_Relax</code> computes the spin-phonon matrix, transition probabilities and τ(T).</li>
+</ol>
+<p>Expected console tail:</p>
+<pre><code>TestU_{eff} of Orbach is 190.1 K
+log(tau) is -11.30 s
+rate-determing step
+</code></pre>
+<p>Outputs (in <code>examples/relaxation/TPs_file/</code> by default):</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OB_v1.dat</code></td>
+<td><code>1/T</code>, <code>-log10(τ/s)</code>, standard deviation</td>
+</tr>
+<tr>
+<td><code>TPs1.png</code></td>
+<td><code>log10(τ/s)</code> vs <code>1/T</code> (Orbach)</td>
+</tr>
+<tr>
+<td><code>TPs2.png</code></td>
+<td>comparison figure</td>
+</tr>
+<tr>
+<td><code>VP.log</code></td>
+<td>spin-phonon matrix elements</td>
+</tr>
+<tr>
+<td><code>TPs/*.tps</code>, <code>TPs/*.tp</code></td>
+<td>cached transition matrices per temperature</td>
+</tr>
+</tbody>
+</table>
+<p>The full example takes a few minutes on a laptop. For a faster check, reduce <code>Trange1</code> to two temperatures.</p>
+<h3 id="41-programmatic-use">4.1 Programmatic use</h3>
+<pre><code class="language-python">from mag_anal.Anal_Tau import CAL_RELAX
+
+tau = CAL_RELAX(&quot;examples/relaxation/CFPs_v1.yml&quot;)
+tau.kernel()
+
+# Orbach rate-determining analysis for the first temperature
+tau.TP[0].Mod_Analyse_OB()
+</code></pre>
+<p><code>tau.TP</code> is a list of <code>TPs_Analyze</code> objects, one per temperature.</p>
+<hr>
+<h2 id="5-full-spc-workflow">5. Full SPC workflow</h2>
+<h3 id="51-step-1-geometry-optimisation-and-phonons">5.1 Step 1 — geometry optimisation and phonons</h3>
+<p>Prepare in <code>SPC_Tool/inpfile/</code>:</p>
+<ul>
+<li><code>POSCAR</code> (or a <code>.cif</code> for <code>gen_POSCAR.py</code>);</li>
+<li><code>opt_INCAR</code>, <code>freq_INCAR</code>;</li>
+<li><code>job_vasp.sh</code> adapted to your cluster.</li>
+</ul>
+<p>Run, in <code>SPC_Tool/opt_freq/vaspsh/</code>:</p>
+<pre><code class="language-bash">bash POSCAR.sh     # optional: build POSCAR from a structure
+bash opt.sh        # VASP geometry optimisation
+bash freq.sh       # VASP frequencies; calls Select_group.py
+</code></pre>
+<p><code>freq.sh</code> checks that the optimisation reached <code>reached required accuracy</code>, then creates <code>VASP/freq/</code>, runs <code>Select_group.py</code> and copies <code>freq_POSCAR</code>, <code>eq_opt.xyz</code>, <code>dpxs</code> and <code>Atom_list</code> into <code>inpfile/</code>.</p>
+<p><code>Select_group.py</code> options:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--cry</code></td>
+<td>crystal structure file</td>
+</tr>
+<tr>
+<td><code>--ct</code></td>
+<td>centre element (e.g. <code>Dy</code>)</td>
+</tr>
+<tr>
+<td><code>--num</code></td>
+<td>centre atom index (optional)</td>
+</tr>
+<tr>
+<td><code>--out</code></td>
+<td>output folder</td>
+</tr>
+<tr>
+<td><code>-f</code>, <code>--freq</code></td>
+<td>also write a <code>Selective dynamics</code> <code>freq_POSCAR</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-step-2-displaced-structures">5.2 Step 2 — displaced structures</h3>
+<p>In <code>SPC_Tool/Per_B_kp/Pyscfsh/</code>:</p>
+<pre><code class="language-bash">bash run1_stru.sh
+bash run2_Regr.sh   # only for the periodic-cell path
+</code></pre>
+<p><code>run1_stru.sh</code> calls either:</p>
+<pre><code class="language-bash">python3 gen_structures_xyz.py --pos ../../inpfile/eq_opt.xyz -np 10 -mdp 0.02
+# or
+python3 gen_structures_cell.py --out ../../inpfile/freq.log --pos ../../inpfile/opt_CONTCAR -np 10 -mdp 0.2
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gen_structures_xyz.py</code></td>
+<td><code>--pos</code>, <code>-np/--npts</code>, <code>-mdp/--maxdp</code></td>
+</tr>
+<tr>
+<td><code>gen_structures_cell.py</code></td>
+<td><code>--out</code> (VASP frequency file), <code>--pos</code>, <code>-np</code>, <code>-mdp</code>, <code>-v</code></td>
+</tr>
+<tr>
+<td><code>Replace_group.py</code></td>
+<td><code>-i/--inp</code>, <code>-o/--out</code>, <code>--inpfile</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>gen_structures_*</code> writes <code>perb/&lt;mode&gt;/&lt;point&gt;/mol_&lt;mode&gt;_&lt;point&gt;.xyz</code>. <code>Replace_group.py</code> extracts the molecular group from the periodic cell using <code>inpfile/Atom_list</code> and <code>inpfile/dpxs</code>.</p>
+<h3 id="53-step-3-electronic-structure-inputs">5.3 Step 3 — electronic-structure inputs</h3>
+<pre><code class="language-bash">bash run3_inp.sh
+</code></pre>
+<p><code>run3_inp.sh</code> fills the template for the equilibrium structure and every displacement:</p>
+<pre><code class="language-bash">python insert_xyz.py --tmp ../../inpfile/dmet_tmp.py.tmpl \
+    --xyz mol_&lt;mode&gt;_&lt;point&gt;.xyz -o dmet_cassiso.py -c &lt;charge&gt; -t &lt;title&gt;
+</code></pre>
+<p><code>insert_xyz.py</code> options:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--tmp</code></td>
+<td>template file (<code>.tmpl</code>)</td>
+</tr>
+<tr>
+<td><code>--xyz</code></td>
+<td>structure file</td>
+</tr>
+<tr>
+<td><code>-o/--out</code></td>
+<td>output Python input</td>
+</tr>
+<tr>
+<td><code>-c/--charge</code></td>
+<td>total charge</td>
+</tr>
+<tr>
+<td><code>-t/--title</code></td>
+<td>job title</td>
+</tr>
+</tbody>
+</table>
+<p>The resulting <code>dmet_cassiso.py</code> still needs a <strong>complete basis block</strong>. The template contains Dy/C/H entries as an example; add every element present in your system.</p>
+<p>For OpenMolcas, use <code>SPC_Tool/inpfile/molcas_cas.in</code> and the Molcas job templates instead.</p>
+<h3 id="54-step-4-run-the-electronic-structure-jobs">5.4 Step 4 — run the electronic-structure jobs</h3>
+<p>The generated layout is:</p>
+<pre><code>perb/
+├── eq/
+│   ├── dmet_cassiso.py
+│   └── jobeq.sh
+└── &lt;mode&gt;/&lt;point&gt;/
+    ├── dmet_cassiso.py
+    └── pyjob.sh
+</code></pre>
+<p>Submit <code>jobeq.sh</code> first, then the displaced jobs. <code>SPC_Tool/sh/</code> contains templates:</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>job_pyscf.sh</code></td>
+<td>one displaced PySCF job</td>
+</tr>
+<tr>
+<td><code>jobeq_pyscf.sh</code></td>
+<td>equilibrium PySCF job</td>
+</tr>
+<tr>
+<td><code>job_molcas.sh</code>, <code>jobeq_molcas.sh</code></td>
+<td>OpenMolcas equivalents</td>
+</tr>
+<tr>
+<td><code>check_pyscf.sh</code>, <code>check_molcas.sh</code></td>
+<td>check completion and trim output</td>
+</tr>
+<tr>
+<td><code>clean_pyscf.sh</code></td>
+<td>remove checkpoint files</td>
+</tr>
+<tr>
+<td><code>yhjob_pyscf.sh</code>, <code>yhjob_molcas.sh</code></td>
+<td>batch submission</td>
+</tr>
+</tbody>
+</table>
+<p>These files are <strong>templates</strong>; edit partition/queue, e-mail, modules and <code>VASP_BIN</code>. See §10.</p>
+<h3 id="55-step-5-extract-cfps">5.5 Step 5 — extract CFPs</h3>
+<pre><code class="language-bash">bash run4_CFPs.sh
+</code></pre>
+<p>which is equivalent to:</p>
+<pre><code class="language-bash">python3 Extract_CFPs.py -el perb/eq/pyout -nd 201 -np 10
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-el/--eqlog</code></td>
+<td>equilibrium magnetic output</td>
+</tr>
+<tr>
+<td><code>-nd/--nmds</code></td>
+<td>number of vibrational modes</td>
+</tr>
+<tr>
+<td><code>-np/--npts</code></td>
+<td>number of displacement points</td>
+</tr>
+<tr>
+<td><code>--prefix</code></td>
+<td>directory containing <code>perb</code> (default <code>perb</code>)</td>
+</tr>
+<tr>
+<td><code>--stdout</code></td>
+<td>per-point output name (default <code>stdout1</code>)</td>
+</tr>
+<tr>
+<td><code>--out</code></td>
+<td>output CFP file (default <code>CFPs.out</code>)</td>
+</tr>
+<tr>
+<td><code>-v</code></td>
+<td>verbose</td>
+</tr>
+</tbody>
+</table>
+<p>The result <code>CFPs.out</code> is the <code>CFPs_filename</code> consumed by <code>mag_anal</code>.</p>
+<h3 id="56-step-6-relaxation-time">5.6 Step 6 — relaxation time</h3>
+<p>Create a YAML file pointing to <code>CFPs.out</code>, the equilibrium output, <code>freq.log</code>, <code>POSCAR</code>, <code>Atom_list</code> and the tensor-operator folder, then run:</p>
+<pre><code class="language-bash">lamp-tau --yml my_system.yml
+</code></pre>
+<p>See §6 for all keys and §8 for outputs.</p>
+<hr>
+<h2 id="6-yaml-reference">6. YAML reference</h2>
+<p>A complete example is <code>examples/relaxation/CFPs_v1.yml</code>.</p>
+<h3 id="61-required-keys">6.1 Required keys</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CFPs_filename</code></td>
+<td>path</td>
+<td><code>CFPs.out</code> from <code>Extract_CFPs.py</code></td>
+</tr>
+<tr>
+<td><code>mag_filename</code></td>
+<td>path</td>
+<td>equilibrium electronic-structure output</td>
+</tr>
+<tr>
+<td><code>Ab_Type</code></td>
+<td>int</td>
+<td><code>0</code> Molcas, <code>1</code> OpenMolcas, <code>3</code> PySCF</td>
+</tr>
+<tr>
+<td><code>freq_filename</code></td>
+<td>path</td>
+<td>VASP frequency output</td>
+</tr>
+<tr>
+<td><code>POSCAR</code></td>
+<td>path</td>
+<td>equilibrium structure</td>
+</tr>
+<tr>
+<td><code>TO_foldname</code></td>
+<td>path</td>
+<td>tensor-operator folder</td>
+</tr>
+<tr>
+<td><code>VP_filename</code></td>
+<td>path</td>
+<td>spin-phonon matrix output/prefix</td>
+</tr>
+<tr>
+<td><code>TPs_foldname</code></td>
+<td>path</td>
+<td>cache folder for transition matrices</td>
+</tr>
+<tr>
+<td><code>Out_foldname</code></td>
+<td>path</td>
+<td>folder for τ(T) outputs</td>
+</tr>
+<tr>
+<td><code>CFPs_X</code></td>
+<td>list</td>
+<td>displacement grid; must contain <code>0</code></td>
+</tr>
+<tr>
+<td><code>Correction_slope</code>, <code>Corrected_intercept</code></td>
+<td>float</td>
+<td>frequency correction <code>ν → a·ν + b</code></td>
+</tr>
+<tr>
+<td><code>Fitting_order</code></td>
+<td>int</td>
+<td>polynomial order of the CFP fit</td>
+</tr>
+<tr>
+<td><code>Linewidth_parameter</code></td>
+<td>float</td>
+<td>broadening (cm⁻¹)</td>
+</tr>
+<tr>
+<td><code>If_Data</code></td>
+<td>bool</td>
+<td>overlay experimental τ(T)</td>
+</tr>
+<tr>
+<td><code>If_Perb</code></td>
+<td>bool</td>
+<td>apply the perturbation treatment</td>
+</tr>
+<tr>
+<td><code>Perb_T</code></td>
+<td>float</td>
+<td>perturbation field (T)</td>
+</tr>
+<tr>
+<td><code>g_z</code></td>
+<td>float</td>
+<td>ground-state <code>g_z</code></td>
+</tr>
+<tr>
+<td><code>If_uniformization</code></td>
+<td>bool</td>
+<td>use the uniformization method</td>
+</tr>
+<tr>
+<td><code>CFPs_Type</code></td>
+<td>int</td>
+<td>see §6.2</td>
+</tr>
+<tr>
+<td><code>If_get_picture_Tt</code></td>
+<td>bool</td>
+<td>write τ(T) figures</td>
+</tr>
+<tr>
+<td><code>If_Orbach</code>, <code>If_Raman</code></td>
+<td>bool</td>
+<td>enable relaxation channels</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-cfps_type">6.2 <code>CFPs_Type</code></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+<th>Extra keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>normal-mode CFPs</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>Cartesian (xyz) CFPs</td>
+<td><code>Atom_list</code></td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>xyz + spatial reduction</td>
+<td><code>Molfile</code>, plus <code>Atom_radius</code> <strong>or</strong> <code>Atom_label</code></td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>Lorentz random CFPs</td>
+<td><code>llzA</code>, <code>llzw</code></td>
+</tr>
+</tbody>
+</table>
+<p>For <code>CFPs_Type=1</code> and <code>2</code>, <code>Atom_list</code> points to the atom indices retained by the spatial-truncation selection. The default is <code>inpfile/Atom_list</code>; specify it explicitly for portable examples.</p>
+<h3 id="63-optional-keys">6.3 Optional keys</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Atom_list</code></td>
+<td>atom indices for the mode projection (default <code>inpfile/Atom_list</code>)</td>
+</tr>
+<tr>
+<td><code>First_list</code></td>
+<td>first-shell indices for <code>CFPs_Type=2</code></td>
+</tr>
+<tr>
+<td><code>Molfile</code>, <code>ct_idx</code>, <code>Atom_radius</code>, <code>Atom_label</code></td>
+<td>spatial-reduction options</td>
+</tr>
+<tr>
+<td><code>llzA</code>, <code>llzw</code></td>
+<td>Lorentz random-CFP parameters</td>
+</tr>
+<tr>
+<td><code>If_select_sigma</code>, <code>select_sigma</code></td>
+<td>restrict modes to a frequency window (cm⁻¹)</td>
+</tr>
+<tr>
+<td><code>If_T_step</code>, <code>nTrange</code>, <code>Trange1..n</code></td>
+<td>temperature grid</td>
+</tr>
+<tr>
+<td><code>ndata</code>, <code>Tr1..</code>, <code>logtime1..</code>, <code>label1..</code></td>
+<td>experimental data overlay</td>
+</tr>
+</tbody>
+</table>
+<h3 id="64-temperature-grid">6.4 Temperature grid</h3>
+<ul>
+<li><code>If_T_step: True</code>: each <code>TrangeN</code> is <code>min,max,step</code>.</li>
+<li><code>If_T_step: False</code>: each <code>TrangeN</code> is <code>min,max,count</code>.</li>
+</ul>
+<p>Example:</p>
+<pre><code class="language-yaml">If_T_step: True
+nTrange: 1
+Trange1: 10,50,5      # 10, 15, ..., 50 K
+</code></pre>
+<h3 id="65-experimental-overlay">6.5 Experimental overlay</h3>
+<p>With <code>If_Data: True</code>, provide:</p>
+<pre><code class="language-yaml">ndata: 1
+Tr1: [ ... ]          # 1/T
+logtime1: [ ... ]     # log10(τ/s)
+label1: Exp
+</code></pre>
+<hr>
+<h2 id="7-file-formats">7. File formats</h2>
+<h3 id="71-cfpsout">7.1 <code>CFPs.out</code></h3>
+<pre><code>The Perturbation CFPs
+&lt;blank line&gt;
+Total modes 201
+Total points 10
+Mode 1 Point 1
+&lt;5 numbers&gt;
+&lt;9 numbers&gt;
+&lt;13 numbers&gt;
+...
+</code></pre>
+<p>The blank line is optional in recent versions (the reader searches for <code>Total modes</code>/<code>Total points</code>), but <code>Extract_CFPs.py</code> writes it.</p>
+<h3 id="72-freqlog">7.2 <code>freq.log</code></h3>
+<p>VASP frequency output with blocks:</p>
+<pre><code>   1 f  =  102.701176 THz ... 3425.742380 cm-1 ...
+             X         Y         Z           dx          dy          dz
+      ...
+</code></pre>
+<p>The mode order must match <code>CFPs.out</code>.</p>
+<h3 id="73-eqpyout">7.3 <code>eqpyout</code></h3>
+<p>PySCF output containing the <code>Rotated Crystal Field Parameters:</code> table and spin-orbit eigenstates. For Molcas/OpenMolcas use <code>Ab_Type=0/1</code>.</p>
+<h3 id="74-eso">7.4 <code>.eso</code></h3>
+<p><code>TO_foldname</code> contains <code>&lt;Nstate&gt;_real.eso</code> and <code>&lt;Nstate&gt;_imag.eso</code>:</p>
+<pre><code>k = 2,q = -2
+&lt;16 × 16 real numbers&gt;
+...
+</code></pre>
+<p>The shipped <code>examples/relaxation/ESO_TTO/</code> files are for 16 states (Dy³⁺).</p>
+<h3 id="75-templates">7.5 Templates</h3>
+<p><code>SPC_Tool/inpfile/*.tmpl</code> are <strong>not runnable</strong>. They contain three placeholder lines:</p>
+<pre><code>Molecular_Name
+Molecular_Charge
+Calculate_Title
+</code></pre>
+<p><code>insert_xyz.py</code> replaces these lines. Complete the basis block before running.</p>
+<hr>
+<h2 id="8-output-files">8. Output files</h2>
+<h3 id="81-out_foldname">8.1 <code>Out_foldname</code></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OB_v1.dat</code></td>
+<td>columns <code>1/T</code>, <code>-log10(τ/s)</code>, standard deviation</td>
+</tr>
+<tr>
+<td><code>RM_v1.dat</code></td>
+<td>same for the Raman channel</td>
+</tr>
+<tr>
+<td><code>TPs1.png</code></td>
+<td><code>log10(τ/s)</code> vs <code>1/T</code></td>
+</tr>
+<tr>
+<td><code>TPs2.png</code></td>
+<td>comparison figure</td>
+</tr>
+<tr>
+<td><code>uniform.dat</code></td>
+<td>uniformization results (<code>1/T</code>, <code>-log10(rate)</code> for three estimates)</td>
+</tr>
+<tr>
+<td><code>OBTrans.eps</code>, <code>RMTrans.eps</code>, <code>RMPie.eps</code></td>
+<td>mode-resolved analysis (after <code>Mod_Analyse_OB</code>/<code>RM</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The Y-axis of <code>TPs1.png</code> is <code>log10(τ/s)</code>; column 2 of <code>OB_v1.dat</code> is its negative (<code>-log10(τ/s)</code>). Negate column 2 to recover the plotted quantity.</p>
+<h3 id="82-tps_foldname">8.2 <code>TPs_foldname</code></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OB&lt;T&gt;.tps</code></td>
+<td>Orbach transition matrix at <code>T</code> K (text)</td>
+</tr>
+<tr>
+<td><code>OB&lt;T&gt;.tp</code></td>
+<td>summed Orbach matrix</td>
+</tr>
+<tr>
+<td><code>LM&lt;T&gt;.tps</code></td>
+<td>Raman transition matrix</td>
+</tr>
+<tr>
+<td><code>LM&lt;T&gt;.tp</code></td>
+<td>summed Raman matrix</td>
+</tr>
+</tbody>
+</table>
+<p>If a cached file exists, it is read instead of recomputed. Delete it to force recalculation. The <code>If_select_sigma</code>/<code>select_sigma</code> header is checked by <code>check_select_sigma</code>.</p>
+<h3 id="83-vp_filename">8.3 <code>VP_filename</code></h3>
+<p>The spin-phonon matrix. A <code>.dat</code> file is written first and renamed on completion; an interrupted run leaves <code>*.dat</code> and can be removed safely.</p>
+<h3 id="84-pshpy">8.4 <code>psh.py</code></h3>
+<p><code>PSH</code> writes <code>SOC.txt</code>, <code>Lx/Ly/Lz.txt</code>, <code>Sx/Sy/Sz.txt</code>, <code>eigval.txt</code> and <code>eig_*.txt</code> to <code>outdir</code> (default: current directory).</p>
+<hr>
+<h2 id="9-python-api">9. Python API</h2>
+<h3 id="91-cal_relax">9.1 <code>CAL_RELAX</code></h3>
+<pre><code class="language-python">from mag_anal.Anal_Tau import CAL_RELAX
+
+tau = CAL_RELAX(&quot;my_system.yml&quot;)
+tau.kernel()
+</code></pre>
+<p><code>kernel()</code> calls <code>Read_input</code>, <code>Read_freq</code>, <code>Read_CFPs</code>, <code>Read_Static_effH</code>, <code>Analyse_Relax</code>.</p>
+<p>Useful attributes after <code>kernel()</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tau.T_list</code></td>
+<td>temperature grid</td>
+</tr>
+<tr>
+<td><code>tau.TP</code></td>
+<td>list of <code>TPs_Analyze</code> (one per T)</td>
+</tr>
+<tr>
+<td><code>tau.CFPs</code></td>
+<td><code>CFPs_Analyze</code> object</td>
+</tr>
+<tr>
+<td><code>tau.Eigen</code></td>
+<td><code>Eigenstates</code> object</td>
+</tr>
+<tr>
+<td><code>tau.Out_foldname</code></td>
+<td>output folder</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-cfps_analyze">9.2 <code>CFPs_Analyze</code></h3>
+<pre><code class="language-python">from mag_anal.Anal_Tau import CFPs_Analyze
+
+cfps = CFPs_Analyze(&quot;CFPs.out&quot;, CFPs_X, atom_list=&quot;Atom_list&quot;)
+cfps.propare_CFPs(mol, CFPs_Type=1, order=1)
+</code></pre>
+<p>Methods: <code>read_CFPs</code>, <code>read_CFPs_xyz</code>, <code>read_gtensors</code>, <code>propare_CFPs</code>, <code>gen_slope</code>, <code>gen_slope_xyz</code>, <code>gen_slope_reduced</code>, <code>transB_sl</code>, <code>transB_sl_select</code>, <code>write_CFPs</code>.</p>
+<h3 id="93-eigenstates">9.3 <code>Eigenstates</code></h3>
+<p>Reads energies/wavefunctions from PySCF (<code>read_energies_Pyscf</code>, <code>read_wavefunction_Pyscf</code>), Molcas (<code>_M</code>) or OpenMolcas (<code>_OM</code>), builds the tensor-operator matrices and the spin-phonon matrix.</p>
+<h3 id="94-tps_analyze">9.4 <code>TPs_Analyze</code></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>read_OBTPs</code>, <code>read_RMTPs</code></td>
+<td>read cached matrices</td>
+</tr>
+<tr>
+<td><code>sum_OBRMTPs</code></td>
+<td>sum channels</td>
+</tr>
+<tr>
+<td><code>Mod_Analyse_OB</code>, <code>Mod_Analyse_RM</code></td>
+<td>rate-determining-step analysis</td>
+</tr>
+<tr>
+<td><code>save_TP</code>, <code>save_TPP</code></td>
+<td>write matrices</td>
+</tr>
+</tbody>
+</table>
+<h3 id="95-psh-pseudospin-hamiltonian">9.5 <code>PSH</code> (pseudospin Hamiltonian)</h3>
+<pre><code class="language-python">from mag_anal.psh import PSH
+
+psh = PSH(mysiso, Nstate=16, lmax=12, TFO=1, TFB=0, ROT=True, outdir=&quot;psh_out&quot;)
+psh.kernel()
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SISO</code></td>
+<td><code>embed_sim.siso.SISO</code> object</td>
+</tr>
+<tr>
+<td><code>Nstate</code></td>
+<td>number of <code>|J M&gt;</code> states</td>
+</tr>
+<tr>
+<td><code>lmax</code></td>
+<td>maximum tensor rank</td>
+</tr>
+<tr>
+<td><code>TFO</code></td>
+<td><code>0</code> EasySpin ESO, <code>1</code> tesseral tensor operators (Molforge style)</td>
+</tr>
+<tr>
+<td><code>TFB</code></td>
+<td><code>0</code> least squares, <code>1</code> projection</td>
+</tr>
+<tr>
+<td><code>ROT</code></td>
+<td>rotate CFPs to the easy axis</td>
+</tr>
+<tr>
+<td><code>Angle</code></td>
+<td>explicit ZYZ Euler angles; <code>None</code> uses the easy axis</td>
+</tr>
+<tr>
+<td><code>outdir</code></td>
+<td>directory for diagnostic text files</td>
+</tr>
+</tbody>
+</table>
+<p><code>psh.kernel()</code> runs <code>gen_ESO</code>, <code>get_E_J</code>, <code>get_g_tensor</code> and <code>get_Bkq</code>/<code>get_rot_Bkq</code>.</p>
+<h3 id="96-gen_structures-select_group">9.6 <code>gen_structures</code> / <code>Select_group</code></h3>
+<pre><code class="language-python">from mag_anal.gen_structures import mol_freq
+from mag_anal.Select_group import choose_group
+</code></pre>
+<p><code>mol_freq(outfile, posfile)</code> reads VASP phonons; <code>choose_group(cryfile, center, outfold, r1, r2)</code> selects a molecular group.</p>
+<hr>
+<h2 id="10-hpc-notes">10. HPC notes</h2>
+<p>The files under <code>SPC_Tool/sh/</code> are templates. Before submitting:</p>
+<ul>
+<li>replace <code>YOUR_PARTITION</code> with your partition/queue;</li>
+<li>replace <code>YOUR_EMAIL</code> or remove the mail line;</li>
+<li>set <code>VASP_BIN</code> instead of a hard-coded path;</li>
+<li>replace <code>module load ...</code> / <code># source activate ...</code> with the commands that provide PySCF, LAMP-emb and ASE;</li>
+<li>make <code>num_freq</code>, <code>num_pt</code> and <code>name</code> consistent across <code>run1_stru.sh</code>, <code>run2_Regr.sh</code>, <code>run3_inp.sh</code>, <code>run4_CFPs.sh</code> and the job scripts.</li>
+</ul>
+<p>Slurm example:</p>
+<pre><code class="language-bash">#!/bin/bash
+#SBATCH -o stdout
+#SBATCH --partition=YOUR_PARTITION
+#SBATCH -J lamp_tau
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=28
+#SBATCH --time=100:00:00
+
+module purge
+module load pyscf
+export OMP_NUM_THREADS=7
+export PYTHONPATH=/path/to/LAMP_emb:$PYTHONPATH
+python dmet_cassiso.py
+</code></pre>
+<p>PBS example:</p>
+<pre><code class="language-bash">#!/bin/bash
+#PBS -N lamp_tau
+#PBS -q YOUR_QUEUE
+#PBS -l nodes=1:ppn=28
+#PBS -l walltime=100:00:00
+#PBS -o stdout
+#PBS -j oe
+
+cd &quot;$PBS_O_WORKDIR&quot;
+python dmet_cassiso.py
+</code></pre>
+<p>The original scripts also used Tianhe <code>yhbatch</code>; replace it with the current scheduler commands.</p>
+<hr>
+<h2 id="11-troubleshooting">11. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause / fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ModuleNotFoundError: embed_sim</code></td>
+<td>Install LAMP-emb and add it to <code>PYTHONPATH</code>.</td>
+</tr>
+<tr>
+<td><code>ModuleNotFoundError: mag_anal</code></td>
+<td>Install with <code>pip install -e .</code> or run from the repository root.</td>
+</tr>
+<tr>
+<td><code>FileNotFoundError: .../Atom_list</code></td>
+<td>Set <code>Atom_list</code> in the YAML or create <code>inpfile/Atom_list</code>.</td>
+</tr>
+<tr>
+<td><code>NotImplementedError: Ab_Type=2</code></td>
+<td>ORCA output is not implemented; use <code>Ab_Type=0/1/3</code>.</td>
+</tr>
+<tr>
+<td><code>FileNotFoundError: CFPs.out</code></td>
+<td>Run <code>run4_CFPs.sh</code> first.</td>
+</tr>
+<tr>
+<td><code>KeyError: Missing required key</code></td>
+<td>Add the missing key to the YAML (the message lists it).</td>
+</tr>
+<tr>
+<td><code>ValueError: Could not find 'Total modes'</code></td>
+<td>The CFP file is not in the expected format; see §7.1.</td>
+</tr>
+<tr>
+<td>Plots do not open on a server</td>
+<td>Set <code>MPLBACKEND=Agg</code>.</td>
+</tr>
+<tr>
+<td><code>TPs</code> values look stale</td>
+<td>Delete the cached <code>OB&lt;T&gt;.tps</code>/<code>LM&lt;T&gt;.tps</code> and rerun.</td>
+</tr>
+<tr>
+<td>Shell script does nothing</td>
+<td>The scheduler header/modules still belong to the author's cluster; edit them (§10).</td>
+</tr>
+<tr>
+<td><code>vasp_std: command not found</code></td>
+<td>Set <code>export VASP_BIN=/path/to/vasp_std</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="12-validation">12. Validation</h2>
+<p>The shipped DyAC example was used as a smoke test:</p>
+<ul>
+<li><code>python -m compileall mag_anal SPC_Tool</code> passes;</li>
+<li><code>python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml</code> completes;</li>
+<li>the 201-mode, 10-50 K run reports <code>Ueff ≈ 190 K</code> and <code>log(τ/s) ≈ -11.3</code>;</li>
+<li><code>tests/test_smoke.py</code> checks that <code>OB_v1.dat</code> is produced (uses two temperatures).</li>
+</ul>
+<p>Run:</p>
+<pre><code class="language-bash">MPLBACKEND=Agg python -m pytest tests -q
+</code></pre>
+<hr>
+<h2 id="13-citation-license-and-support">13. Citation, license and support</h2>
+<p>If you use LAMP-tau, please cite the manuscript and the archived release:</p>
+<ul>
+<li>manuscript: <em>Accelerating ab initio spin-phonon relaxation simulation of single-ion magnets by quantum embedding and spatial truncation</em>, J. Chem. Phys. (2026);</li>
+<li>software: see <code>CITATION.cff</code>; the Zenodo DOI is added after the first release.</li>
+</ul>
+<p>License: MIT (see <code>LICENSE</code>). Third-party programs keep their own licenses:</p>
+<ul>
+<li>PySCF — Apache-2.0;</li>
+<li>LAMP-emb — not redistributed here; install it separately;</li>
+<li>VASP, OpenMolcas, ORCA — their own licenses;</li>
+<li>ASE, NumPy, SciPy, Matplotlib, SymPy, prettytable, PyYAML — their own licenses.</li>
+</ul>
+<p>For questions, open an issue on GitHub. For scientific questions, contact the corresponding authors of the paper.</p>
+</body>
+</html>

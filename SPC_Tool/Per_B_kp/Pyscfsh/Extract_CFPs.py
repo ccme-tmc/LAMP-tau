@@ -157,6 +157,7 @@ if __name__ == "__main__":
     B6t = np.zeros([13], dtype = float)  #B_kq,where k = 6
     with open(args.out,"w") as f:
         f.write("The Perturbation CFPs\n")
+        f.write("\n")
         f.write("Total modes {x}\n".format(x=args.nmds))
         f.write("Total points {y}\n".format(y=args.npts))
         for imod in range(0,args.nmds):
