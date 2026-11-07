@@ -343,66 +343,32 @@ def Calculate_mode_list(Atnum):
 
 
 if __name__ == "__main__":
-    """parser = argparse.ArgumentParser(description=""
-        A script to select groups from Crystal structure."")
-    parser.add_argument("--cry", dest="cryfile",type=str, required=True, help="The filename of Crystal structure.")
-    parser.add_argument("--ct", dest="center", type=str, default="None", help="Element of the center of Stru.")
-    parser.add_argument("--num",  dest="number", type=int, help="The number of the center atom of Stru.")
-    parser.add_argument("--out", dest="outfold",type=str, help="The fold where the out file output")
-    parser.add_argument("--freq", "-f", action="store_true", help="output freq-POSCAR.")
-    args = parser.parse_args()"""
-    #选择目标原子集
+    parser = argparse.ArgumentParser(
+        description="Select a molecular group from a crystal structure."
+    )
+    parser.add_argument("--cry", dest="cryfile", required=True,
+                        help="The crystal structure file (xyz or POSCAR).")
+    parser.add_argument("--ct", dest="center", default="Dy",
+                        help="Element of the center atom (default: Dy).")
+    parser.add_argument("--out", dest="outfold", default="./",
+                        help="Output folder (default: current directory).")
+    parser.add_argument("--r1", dest="r1", type=float, default=2.9,
+                        help="First-shell radius in Angstrom (default: 2.9).")
+    parser.add_argument("--r2", dest="r2", type=float, default=0.1,
+                        help="Subsequent radius in Angstrom (default: 0.1).")
+    parser.add_argument("--view", action="store_true",
+                        help="Open the ASE viewer after selection.")
+    args = parser.parse_args()
 
-    cryfile = "./eq_opt.xyz"
-    outfold = "./"
-    groupfold = outfold
-    center_atom_name = "Dy"
-    choose_atom_name = "C"
-    r1 = 1.5
-    rH = 0.95
-
-    #读取晶体数据
-    
-    orig = read(cryfile)
-    view(orig)
-
-    cell = orig.get_cell()
-    
-    #确定初始原子集，默认为单个args.center命名的原子，一般为Co或Dy
-    #initial_num = np.where(orig.numbers == element_dict['Er'])[0][1]
-
-    #print(initial_num)
-    
-    #得出晶格参数
-    #cell = orig.get_cell()
-    #vasp.write_vasp(outfold+"POSCAR",orig,sort=True)
-    
-    #确定初始原子集，默认为单个args.center命名的原子，一般为Co或Dy
-    initial_num = np.where(orig.numbers == element_dict[center_atom_name])[0][0]
-    Select_Atnum = np.asarray([initial_num])
-    
-    
-    dpxs = np.zeros([orig.get_number_of_atoms(),3],dtype = int)
-    #print(dpxs)
-    group,Select_Atnum = choose_group(orig,center_atom_name,outfold,2.9,0.1)
+    # Read the crystal structure and select the molecular group.
+    orig = read(args.cryfile)
+    if args.view:
+        view(orig)
+    group, Select_Atnum = choose_group(
+        orig, args.center, args.outfold, args.r1, args.r2
+    )
     print(Calculate_mode_list(Select_Atnum))
-    view(group)
-    #new = choose_atoms(group,center_atom_name,choose_atom_name)
-
-
-    # with open(outfold+"rtx6_ligs_atoms.txt","w") as f:
-    #     f.write("Atom           xx         yy         zz        q     Zeff  group   enum        J\n")
-    #     f.write("--------------------------------------------------------------------------------\n")
-    #     for i in range(0,new.get_number_of_atoms()):
-    #         f.write(new.get_chemical_symbols()[i]+" ")
-    #         f.write(" ".join(str(s) for s in new.get_positions()[i]-new.get_positions()[0])+" ")
-    #         if new.get_chemical_symbols()[i] == 'Dy':
-    #             f.write("+3.000    +3.00      0      9      7.5")
-    #         else:
-    #             f.write("-0.300    +3.25      1      2      1.0")
-    #         f.write("\n")
-
-    # #view(new)
-    # write(outfold+"eqx6fs.xyz",new)
+    if args.view:
+        view(group)
     
 

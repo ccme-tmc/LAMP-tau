@@ -12,7 +12,7 @@
 %\usepackage[backend=bibtex,sorting=none]{biblatex}
 %\addbibresource{./thesis.bib}
 \title{Relaxation\_Package}
-\author{邓意凡 2001110333}
+\author{LAMP-tau contributors}
 
 %\usepackage[backend=bibtex,sorting=none]{biblatex}
 %\addbibresource{./thesis.bib} %BibTeX数据文件及位置
@@ -166,7 +166,7 @@
 \subsubsection{run3\_inp.sh}
 该脚本用于生成磁性计算文件,支持open-molcas的计算，在mag\_tmp.in中调整计算参数，运行脚本前需要调整脚本中的振动模式数num\_freq，扭曲结构数num\_pt，电荷数i\_charge。
 
-\subsubsection{yhjob.sh和check.sh}
+\subsubsection{yhjob\_pyscf.sh 和 check\_pyscf.sh}
 运行完上述三个脚本后，会新建Pyscfsh/perb/文件夹，在perb/中，会有1个平衡文件夹eq/和数个振动模文件夹，同时会有三个脚本yhjob.sh，yhjob2.sh和check.sh，我们需要修改这三个脚本中的振动模式数num\_freq，扭曲结构数num\_pt，任务提交数num\_mission。在eq文件夹中，除了结构文件和计算配置文件，还有任务提交文件jobeq.sh，需手动提交。在每一个振动文件夹中，除了数个扭曲结构文件夹外，还有任务提交文件job.sh。
 
 为了批量提交这些文件，我们首先运行yhjob.sh，该程序会批量提交各个振动模的任务job.sh，进行CASSCF+SOC的计算。由于计算文件过大，可以辅助运行check.sh。该脚本会自动检索已完成的计算是否收敛，并仅保留已完成的计算的log文件中的输入部分和Single\_Aniso部分。
@@ -184,17 +184,19 @@
 \subsubsection{run3\_inp.sh}
 该脚本用于生成磁性计算文件,支持Pyscf的计算，在dmet\_tmp.py中调整计算参数，运行脚本前需要调整脚本中的振动模式数num\_freq，扭曲结构数num\_pt，电荷数i\_charge和任务名name。
 
-\subsubsection{yhjob.sh和check.sh}
+\subsubsection{yhjob\_pyscf.sh 和 check\_pyscf.sh}
 运行完上述三个脚本后，会新建Pyscfsh/perb/文件夹，在perb/中，会有1个平衡文件夹eq/和数个振动模文件夹，同时会有三个脚本yhjob.sh，yhjob2.sh和check.sh，我们需要修改这三个脚本中的振动模式数num\_freq，扭曲结构数num\_pt，任务提交数num\_mission和任务名name。在eq文件夹中，除了结构文件和计算配置文件，还有任务提交文件jobeq.sh，需手动提交。在每一个振动文件夹中，除了数个扭曲结构文件夹外，还有任务提交文件job.sh和job2.sh。
 
 为了批量提交这些文件，我们首先运行yhjob.sh，该程序会批量提交各个振动模的任务job.sh，进行ROHF的计算，一次提交的最大任务量由num\_mission控制，该脚本会自动检索哪些文件已经提交。但该脚本并不会检测计算是否收敛，所以需要辅助运行check.sh。该脚本会自动检索已完成的计算是否收敛，并选择是否调用insert\_xyz.py重新生成输入文件。之后运行yhjob.sh重新计算这些文件
 
-在所有的ROHF计算完成后，运行yhjob2.sh，该程序会批量提交各个振动模的任务job2.sh，进行轨道的选取和DMET及后续的计算。
+在所有的ROHF计算完成后，运行job\_pyscf.sh，该程序会批量提交各个振动模的任务文件，进行轨道的选取和DMET及后续的计算。
 
-\subsubsection{run4\_Dtensor.sh}
+\subsubsection{run5\_Dtensor.sh}
 所有计算完成后使用run4\_Dtensor.sh提取微扰D张量$CFPs.out$。
 
 \subsection{弛豫时间计算}
+
+使用 \texttt{mag\_anal} 中的 \texttt{Anal\_Tau.py}（命令行入口 \texttt{lamp-tau}）读取 YAML 配置文件，计算 SPC 参数与 \(\tau(T)\)。可运行的示例见仓库根目录的 \texttt{examples/relaxation/CFPs\_v1.yml}；输入文件格式见 \texttt{docs/input\_formats.md}。旧版示例配置位于 \texttt{Relaxation/inpfile/CFPs\_v1.yml}，仅用于说明字段含义。
 
 \subsection{其他文件}
 

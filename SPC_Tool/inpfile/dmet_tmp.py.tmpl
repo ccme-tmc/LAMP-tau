@@ -1,3 +1,8 @@
+# TEMPLATE FILE - not runnable as-is.
+# SPC_Tool/Per_B_kp/Pyscfsh/insert_xyz.py replaces the three placeholder lines
+# below (Molecular_Name / Molecular_Charge / Calculate_Title) and writes the
+# final dmet_cassiso.py.  The basis block is intentionally left for the user to
+# complete for the target element set.
 import numpy as np
 from pyscf import scf
 from pyscf import df
@@ -17,7 +22,7 @@ Calculate_Title
 
 mol = gto.M(atom = m_name,
      basis={
-            Pleaseset
+            # Pleaseset: add one entry per element present in the system.
             'Dy':parse_gaussian.parse(bse.get_basis('x2c-TZVPall-2c',elements='Dy',fmt='gaussian94')),
             'C' :parse_gaussian.parse(bse.get_basis('x2c-SVPall-2c' ,elements='C' ,fmt='gaussian94')),
             'H' :parse_gaussian.parse(bse.get_basis('x2c-SVPall-2c' ,elements='H' ,fmt='gaussian94'))

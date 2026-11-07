@@ -8,8 +8,8 @@ import numpy as np
 from numpy import polyfit, poly1d
 import argparse
 from pathlib import Path
-import shutil 
-import os 
+import shutil
+import os
 import sys
 import re
 import yaml
@@ -22,8 +22,7 @@ from scipy.optimize import curve_fit
 from scipy.linalg import eig, eigh
 from scipy.sparse.linalg import eigs, eigsh
 
-import warnings # 忽略SyntaxWarning类型的警告
-warnings.filterwarnings("ignore", category=SyntaxWarning)
+import warnings  # kept for optional deprecation filters, see --strict-warnings
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
@@ -40,34 +39,34 @@ from ase.io import write
 from ase.io import vasp
 
 symbols = {
-    1: "H",    2: "He",    
-    3: "Li",    4: "Be",    5: "B",    6: "C",    7: "N",    8: "O",    9: "F",    10: "Ne",    
-    11: "Na",    12: "Mg",    13: "Al",    14: "Si",    15: "P",    16: "S",    17: "Cl",    18: "Ar",    
+    1: "H",    2: "He",
+    3: "Li",    4: "Be",    5: "B",    6: "C",    7: "N",    8: "O",    9: "F",    10: "Ne",
+    11: "Na",    12: "Mg",    13: "Al",    14: "Si",    15: "P",    16: "S",    17: "Cl",    18: "Ar",
     19: "K",    20: "Ca",    21: "Sc",    22: "Ti",    23: "V",    24: "Cr",    25: "Mn",    26: "Fe",    27: "Co",    28: "Ni",    29: "Cu",    30: "Zn",    31: "Ga",    32: "Ge",    33: "As",    34: "Se",    35: "Br",    36: "Kr",
-    37: "Rb",    38: "Sr",    39: "Y",    40: "Zr",    41: "Nb",    42: "Mo",    43: "Tc",    44: "Ru",    45: "Rh",    46: "Pd",    47: "Ag",    48: "Cd",    49: "In",    50: "Sn",    51: "Sb",    52: "Te",    53: "I",    54: "Xe",    
-    55: "Cs",   56: "Ba",    
-    57: "La",    58: "Ce",    59: "Pr",    60: "Nd",    61: "Pm",    62: "Sm",    63: "Eu",    64: "Gd",    65: "Tb",    66: "Dy",    67: "Ho",    68: "Er",    69: "Tm",    70: "Yb",    
-    71: "Lu",    72: "Hf",    73: "Ta",    74: "W",    75: "Re",    76: "Os",    77: "Ir",    78: "Pt",    79: "Au",    80: "Hg",    81: "Tl",    82: "Pb",    83: "Bi",    84: "Po",    
+    37: "Rb",    38: "Sr",    39: "Y",    40: "Zr",    41: "Nb",    42: "Mo",    43: "Tc",    44: "Ru",    45: "Rh",    46: "Pd",    47: "Ag",    48: "Cd",    49: "In",    50: "Sn",    51: "Sb",    52: "Te",    53: "I",    54: "Xe",
+    55: "Cs",   56: "Ba",
+    57: "La",    58: "Ce",    59: "Pr",    60: "Nd",    61: "Pm",    62: "Sm",    63: "Eu",    64: "Gd",    65: "Tb",    66: "Dy",    67: "Ho",    68: "Er",    69: "Tm",    70: "Yb",
+    71: "Lu",    72: "Hf",    73: "Ta",    74: "W",    75: "Re",    76: "Os",    77: "Ir",    78: "Pt",    79: "Au",    80: "Hg",    81: "Tl",    82: "Pb",    83: "Bi",    84: "Po",
     85: "At",    86: "Rn",
 }
 
 
 element_dict = {
-    "H": 1,    "He": 2,    
-    "Li": 3,    "Be": 4,    "B": 5,    "C": 6,    "N": 7,    "O": 8,    "F": 9,    "Ne": 10,    
-    "Na": 11,    "Mg": 12,    "Al": 13,    "Si": 14,    "P": 15,    "S": 16,    "Cl": 17,    "Ar": 18,    
+    "H": 1,    "He": 2,
+    "Li": 3,    "Be": 4,    "B": 5,    "C": 6,    "N": 7,    "O": 8,    "F": 9,    "Ne": 10,
+    "Na": 11,    "Mg": 12,    "Al": 13,    "Si": 14,    "P": 15,    "S": 16,    "Cl": 17,    "Ar": 18,
     "K": 19,    "Ca": 20,    "Sc": 21,    "Ti": 22,    "V": 23,    "Cr": 24,    "Mn": 25,    "Fe": 26,    "Co": 27,    "Ni": 28,    "Cu": 29,    "Zn": 30,    "Ga": 31,    "Ge": 32,    "As": 33,    "Se": 34,    "Br": 35,    "Kr": 36,
-    "Rb": 37,    "Sr": 38,    "Y": 39,    "Zr": 40,    "Nb": 41,    "Mo": 42,    "Tc": 43,    "Ru": 44,    "Rh": 45,    "Pd": 46,    "Ag": 47,    "Cd": 48,    "In": 49,    "Sn": 50,    "Sb": 51,    "Te": 52,    "I": 53,    "Xe": 54,    
-    "Cs": 55,    "Ba": 56,    
-    "La": 57,    "Ce": 58,    "Pr": 59,    "Nd": 60,    "Pm": 61,    "Sm": 62,    "Eu": 63,    "Gd": 64,    "Tb": 65,    "Dy": 66,    "Ho": 67,    "Er": 68,    "Tm": 69,    "Yb": 70,    
-    "Lu": 71,    "Hf": 72,    "Ta": 73,    "W": 74,    "Re": 75,    "Os": 76,    "Ir": 77,    "Pt": 78,    "Au": 79,    "Hg": 80,    "Tl": 81,    "Pb": 82,    "Bi": 83,   
+    "Rb": 37,    "Sr": 38,    "Y": 39,    "Zr": 40,    "Nb": 41,    "Mo": 42,    "Tc": 43,    "Ru": 44,    "Rh": 45,    "Pd": 46,    "Ag": 47,    "Cd": 48,    "In": 49,    "Sn": 50,    "Sb": 51,    "Te": 52,    "I": 53,    "Xe": 54,
+    "Cs": 55,    "Ba": 56,
+    "La": 57,    "Ce": 58,    "Pr": 59,    "Nd": 60,    "Pm": 61,    "Sm": 62,    "Eu": 63,    "Gd": 64,    "Tb": 65,    "Dy": 66,    "Ho": 67,    "Er": 68,    "Tm": 69,    "Yb": 70,
+    "Lu": 71,    "Hf": 72,    "Ta": 73,    "W": 74,    "Re": 75,    "Os": 76,    "Ir": 77,    "Pt": 78,    "Au": 79,    "Hg": 80,    "Tl": 81,    "Pb": 82,    "Bi": 83,
 }
 
 
 atMass = {
-    'H': 1.008,    'He': 4.003,    
-    'Li': 6.941,    'Be': 9.012,    'B': 10.81,     'C': 12.01,    'N': 14.01,    'O': 16.00,     'F': 19.00,     'Ne': 20.18,     
-    'Na': 22.99,    'Mg': 24.31,    'Al': 26.98,    'Si': 28.09,    'P': 30.97,    'S': 32.07,    'Cl': 35.45,    'Ar': 39.95,    
+    'H': 1.008,    'He': 4.003,
+    'Li': 6.941,    'Be': 9.012,    'B': 10.81,     'C': 12.01,    'N': 14.01,    'O': 16.00,     'F': 19.00,     'Ne': 20.18,
+    'Na': 22.99,    'Mg': 24.31,    'Al': 26.98,    'Si': 28.09,    'P': 30.97,    'S': 32.07,    'Cl': 35.45,    'Ar': 39.95,
     'K': 39.10, 'Ca': 40.08,    'Sc': 44.96,    'Ti': 47.87,    'V': 50.94,    'Cr': 52.00,    'Mn': 54.94,    'Fe': 55.85,    'Ni': 58.69,    'Co': 58.93,    'Cu': 63.55,    'Zn': 65.38,    'Ga': 69.72,    'Ge': 72.63,    'As': 74.92,    'Se': 78.96,    'Br': 79.90,    'Kr': 83.80,
     'Rb': 85.47,    'Sr': 87.62,    'Y': 88.91,    'Zr': 91.22,    'Nb': 92.91,    'Mo': 95.94,    'Tc': 98.00,    'Ru': 101.07,    'Rh': 102.91,    'Pd': 106.42,    'Ag': 107.87,    'Cd': 112.41,    'In': 114.82,    'Sn': 118.71,    'Sb': 121.76,    'I': 126.90,    'Te': 127.60,    'Xe': 131.29,
     'Cs': 132.91,    'Ba': 137.33,
@@ -84,7 +83,7 @@ class _const:
         if name in self.__dict__:
             raise self.ConstError("Can't rebind const (%s)" %name)
         self.__dict__[name]=value
-        
+
 const = _const()
 
 ##################################### constants ####################################
@@ -101,21 +100,6 @@ x_fac = np.sqrt( const.hbar / (const.amu * 2.0 * np.pi * const.c) ) * 10 ** 1.5
 
 fig1 = plt.figure(num='Fig1').add_subplot(111)
 fig2 = plt.figure(num='Fig2').add_subplot(111)
-
-#设置清屏函数
-def is_in_notebook():
-    import sys
-    return 'ipykernel' in sys.modules
-
-def clear_output():
-    """
-    clear output for both jupyter notebook and the console
-    """
-    import os
-    os.system('cls' if os.name == 'nt' else 'clear')
-    if is_in_notebook():
-        from IPython.display import clear_output as clear
-        clear()
 
 class CAL_RELAX(object):
     def __init__(self, Input_filename):
@@ -134,6 +118,19 @@ class CAL_RELAX(object):
 
     def Read_input(self):
         pinput = self.pinput
+        required = [
+            "CFPs_filename", "mag_filename", "freq_filename", "POSCAR",
+            "TPs_foldname", "TO_foldname", "VP_filename", "Out_foldname",
+            "CFPs_X", "Correction_slope", "Corrected_intercept",
+            "Fitting_order", "Linewidth_parameter", "If_Data", "If_Perb",
+            "Perb_T", "g_z", "If_uniformization", "CFPs_Type", "Ab_Type",
+            "If_get_picture_Tt", "If_Orbach", "If_Raman",
+        ]
+        missing = [key for key in required if key not in pinput]
+        if missing:
+            raise KeyError(
+                "Missing required key(s) in the YAML input: " + ", ".join(missing)
+            )
         self.CFPs_filename = pinput['CFPs_filename']
         self.mag_filename = pinput['mag_filename']
         self.freq_filename = pinput['freq_filename']
@@ -141,7 +138,7 @@ class CAL_RELAX(object):
         self.TPs_foldname = pinput['TPs_foldname']
         self.TO_foldname = pinput['TO_foldname']
         self.VP_filename = pinput['VP_filename']
-        print('Your matrix <\Psi_i|\partial H /\partial Q|\Psi_j> file:'+self.VP_filename)
+        print(r'Your matrix <\Psi_i|\partial H /\partial Q|\Psi_j> file:'+self.VP_filename)
         print('Your master matrix file:'+self.TPs_foldname)
         self.Out_foldname = pinput['Out_foldname']
         self.CFPs_X = pinput['CFPs_X']
@@ -158,9 +155,9 @@ class CAL_RELAX(object):
         self.Ab_Type = int(pinput['Ab_Type'])
         self.If_get_picture_Tt = bool(pinput['If_get_picture_Tt'])
 
-        #self.If_select_sigma = bool(pinput['If_select_sigma'])
-        self.If_select_sigma = False
-        self.select_sigma = 10000
+        # Optional: restrict the mode list by a frequency window (cm^-1).
+        self.If_select_sigma = bool(pinput.get('If_select_sigma', False))
+        self.select_sigma = float(pinput.get('select_sigma', 10000))
 
         self.If_Orbach = bool(pinput['If_Orbach'])
         self.If_Raman = bool(pinput['If_Raman'])
@@ -188,7 +185,12 @@ class CAL_RELAX(object):
         Read CFPs
         """
 
-        self.CFPs = CFPs_Analyze(self.CFPs_filename,self.CFPs_X)
+        self.CFPs = CFPs_Analyze(
+            self.CFPs_filename,
+            self.CFPs_X,
+            atom_list=self.pinput.get('Atom_list', 'inpfile/Atom_list'),
+            first_list=self.pinput.get('First_list', 'inpfile/First_list'),
+        )
         self.CFPs.info(self.mol.freqs.size)
         """CFPs type:
         0:normal mode CFPs
@@ -202,29 +204,31 @@ class CAL_RELAX(object):
             case 1:
                 self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,order=self.Fitting_order)
             case 2:
+                if 'Molfile' not in self.pinput:
+                    raise KeyError("CFPs_Type=2 requires 'Molfile' in the YAML input.")
                 molfile = self.pinput['Molfile']
-                try:
-                    ct_idx = self.pinput['ct_idx']
-                except:
-                    ct_idx='Dy'
-                try:
+                ct_idx = self.pinput.get('ct_idx', 'Dy')
+                if 'Atom_radius' in self.pinput:
                     Atom_radius = float(self.pinput['Atom_radius'])
                     self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,radius=Atom_radius,molfile=molfile,ct_idx=ct_idx,order=self.Fitting_order)
-                except:
-                    Atom_label = float(self.pinput['Atom_label'])
-                    self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,Atom_label=Atom_label,molfile=molfile,ct_idx=ct_idx,order=self.Fitting_order)
+                elif 'Atom_label' in self.pinput:
+                    atoms_label = self.pinput['Atom_label']
+                    self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,atoms_label=atoms_label,molfile=molfile,ct_idx=ct_idx,order=self.Fitting_order)
+                else:
+                    raise KeyError(
+                        "CFPs_Type=2 requires either 'Atom_radius' or 'Atom_label' "
+                        "in the YAML input."
+                    )
             case 3:
                 llzA = float(self.pinput['llzA'])
                 llzw = float(self.pinput['llzw'])
                 self.CFPs.propare_CFPs(self.mol,CFPs_Type=self.CFPs_Type,llzA=llzA,llzw=llzw)
 
         print("finish reading CFPs")
-        
-        if self.If_select_sigma:
-            self.select_sigma = self.pinput['select_sigma']
+
         self.Modes_list = np.linspace(0,self.CFPs.nmds-1,num = self.CFPs.nmds,dtype = int)
         print(self.Modes_list)
-    
+
     def Read_Static_effH(self):
         """
         Read energy and wavefunction
@@ -232,8 +236,8 @@ class CAL_RELAX(object):
         self.Eigen = Eigenstates(self.mag_filename)
         """Ab type:
         0:Molcas
-        1:Openmocas
-        2:Orca
+        1:OpenMolcas
+        2:Orca (not implemented)
         3:Pyscf
         """
         match self.Ab_Type:
@@ -243,13 +247,20 @@ class CAL_RELAX(object):
             case 1:
                 self.Eigen.read_energies_OM()
                 self.Eigen.read_wavefunction_OM()
+            case 2:
+                raise NotImplementedError(
+                    "Ab_Type=2 (ORCA) is not implemented in this release; "
+                    "use Ab_Type=0/1 (Molcas/OpenMolcas) or 3 (PySCF)."
+                )
             case 3:
                 self.Eigen.read_energies_Pyscf()
                 self.Eigen.read_wavefunction_Pyscf()
+            case _:
+                raise ValueError(f"Unknown Ab_Type: {self.Ab_Type}")
         self.Eigen.gen_J_number()
         self.Eigen.propare_TO(self.TO_foldname)
         if self.If_Perb:
-            self.Eigen.Pertubation(self.Perb_T,self.g_z) 
+            self.Eigen.Pertubation(self.Perb_T,self.g_z)
 
     def SPC_Analyse(self):
         """
@@ -257,15 +268,15 @@ class CAL_RELAX(object):
         """
         CarHs_atom(self.CFPs)
         SPC_atom(self.CFPs)
-        
+
         density_spc(self.CFPs,self.mol,2000,"SPC_2k.png")
         density_spc_3D(self.CFPs,self.mol,1600,3.8,"dSPCdr")
         return True
-    
+
     def Analyse_Relax(self):
         T_list = self.T_list
         pinput= self.pinput
-        if self.If_get_picture_Tt and self.If_Data:        
+        if self.If_get_picture_Tt and self.If_Data:
             """
             Draw the data you pre-entered in .yml
             """
@@ -290,7 +301,7 @@ class CAL_RELAX(object):
         self.TP = []
         for T in self.T_list:
             self.TP.append(self.Calculate_T(T))
-            
+
 
         if self.If_uniformization:
             draw_uni(TPlist_rds,T_list,Mlabel,self.Out_foldname,If_pic=self.If_get_picture_Tt)
@@ -307,7 +318,7 @@ class CAL_RELAX(object):
         if self.If_Orbach:
             plt.figure("Fig1")
             drwa_OB(Mlabel, AllOBRate_list,T_list,self.Out_foldname+"/OB_v1.dat",If_pic=self.If_get_picture_Tt)
-            
+
         if self.If_Raman:
             plt.figure("Fig1")
             drwa_RM(Mlabel, AllRMRate_list,T_list,self.Out_foldname+"/RM_v1.dat",If_pic=self.If_get_picture_Tt)
@@ -316,26 +327,26 @@ class CAL_RELAX(object):
         plt.legend(frameon=False,bbox_to_anchor=(1, 0),loc=4,ncol=1)
         Tmin = T_list[0]
         Tmax = np.max(T_list)
-        fig1.set_title("$\mathit{T}$ "+"= {x} K to {y} K".format(x = int(Tmin),y = int(Tmax))) 
-        fig1.set_xlabel("$\mathit{T}^{-1}$ (K$^{-1}$)") 
-        fig1.set_ylabel(r"log($\mathit{\tau}$) (s)") 
+        fig1.set_title(r"$\mathit{T}$ "+"= {x} K to {y} K".format(x = int(Tmin),y = int(Tmax)))
+        fig1.set_xlabel(r"$\mathit{T}^{-1}$ (K$^{-1}$)")
+        fig1.set_ylabel(r"log($\mathit{\tau}$) (s)")
         #fig1.set_xlim(0.005,0.02)
         fig1.yaxis.set_major_locator(MultipleLocator(2))
         #fig1.set_ylim(-6,4)
         #fig1.xaxis.set_major_locator(MultipleLocator(0.01))
-        #plt.xticks(1/T_list,T_list)   
-        plt.savefig("TPs1.png",bbox_inches='tight')
+        #plt.xticks(1/T_list,T_list)
+        plt.savefig(os.path.join(self.Out_foldname, "TPs1.png"), bbox_inches='tight')
 
         plt.figure("Fig2")
         plt.legend(frameon=False,bbox_to_anchor=(1, 0),loc=4,ncol=1)
         Tmin = T_list[0]
         Tmax = np.max(T_list)
-        fig2.set_title("$\mathit{T}$ "+"= {x} K to {y} K".format(x = int(Tmin),y = int(Tmax))) 
-        fig2.set_xlabel("$\mathit{T}^{-1}$ (K$^{-1}$)") 
-        fig2.set_ylabel(r"log($\mathit{\tau}$) (s)") 
+        fig2.set_title(r"$\mathit{T}$ "+"= {x} K to {y} K".format(x = int(Tmin),y = int(Tmax)))
+        fig2.set_xlabel(r"$\mathit{T}^{-1}$ (K$^{-1}$)")
+        fig2.set_ylabel(r"log($\mathit{\tau}$) (s)")
         #fig2.set_xlim(0.005,0.02)
         #fig2.set_ylim(-4,4)
-        plt.savefig("TPs2.png",bbox_inches='tight')
+        plt.savefig(os.path.join(self.Out_foldname, "TPs2.png"), bbox_inches='tight')
 
         plt.show()
 
@@ -362,7 +373,7 @@ class CAL_RELAX(object):
                 Eigen.read_sph_matrix(VP_filename)
             else:
                 print("There is no corresponding .vp file, get the perturbation potential matrix  ")
-                Eigen.gen_sph_matrix(VP_filename,Modes_list,CFPs,self.If_select_sigma,self.select_sigma)        
+                Eigen.gen_sph_matrix(VP_filename,Modes_list,CFPs,self.If_select_sigma,self.select_sigma)
             if not Path(TPs_foldname).is_dir():
                 os.makedirs(TPs_foldname)
             for T in self.T_list:
@@ -374,7 +385,7 @@ class CAL_RELAX(object):
                         self.check_select_sigma(TPs_filename1)
                     else:
                         self.gen_OBTPs(T,TPs_filename1)
-                #"""    
+                #"""
                 if If_Raman:
                     TPs_filename2 = TPs_foldname+"/LM{x}.tps".format(x = T)
                     print("Work on Raman TPs of T = {x}K".format(x=T))
@@ -393,12 +404,12 @@ class CAL_RELAX(object):
             TP_temp.read_OBTPs(TPs_filename1)
             TP_filename = self.TPs_foldname+"/OB{x}.tp".format(x=T)
             np.savetxt(TP_filename,TP_temp.OBTP)
-        #"""    
+        #"""
         if self.If_Raman:
             TPs_filename2 = self.TPs_foldname+"/LM{x}.tps".format(x = T)
             TP_temp.read_RMTPs(TPs_filename2)
             TP_filename = self.TPs_foldname+"/LM{x}.tp".format(x=T)
-            np.savetxt(TP_filename,TP_temp.RMTP)  
+            np.savetxt(TP_filename,TP_temp.RMTP)
         TP_temp.sum_OBRMTPs()
         if self.If_uniformization:
             print("Simulation TPs of T = {x}K".format(x=T))
@@ -433,7 +444,7 @@ class CAL_RELAX(object):
         print("Calculate the Raman TPs of T = {x}K".format(x=T))
         TP_nmds = Modes_list.shape[0]
         TP = np.zeros([Eigen.n_states,Eigen.n_states,CFPs.nmds,CFPs.nmds], dtype = float)
-        with open(TPs_filename+".dat","w") as file:    
+        with open(TPs_filename+".dat","w") as file:
             file.write("The Transparant Probilities\n")
             file.write("Total modes {x}\n".format(x=CFPs.nmds))
             file.write("Max total angular momentum {x}\n".format(x=Eigen.J))
@@ -502,7 +513,7 @@ class CAL_RELAX(object):
         print("Calculate the Orbach TPs of T = {x}K".format(x=T))
         TP_nmds = Modes_list.shape[0]
         TP = np.zeros([Eigen.n_states,Eigen.n_states,CFPs.nmds], dtype = float)
-        with open(TPs_filename+".dat","w") as file:    
+        with open(TPs_filename+".dat","w") as file:
             file.write("The Transparant Probilities\n")
             file.write("Total modes {x}\n".format(x=CFPs.nmds))
             file.write("Max total angular momentum {x}\n".format(x=Eigen.J))
@@ -536,14 +547,16 @@ class CAL_RELAX(object):
 class CFPs_Analyze(object):
     """
         the object corresponds to analyze the CFPs.
-    """ 
-    def __init__(self, filename,CFPs_X):
+    """
+    def __init__(self, filename,CFPs_X,atom_list='inpfile/Atom_list',first_list='inpfile/First_list'):
         self.filename = filename
         self.X = CFPs_X
-    
+        self.atom_list = atom_list
+        self.first_list = first_list
+
     def read_CFPs(self):
         """
-        read CFPs, number of modes, and the number of points from the file filename 
+        read CFPs, number of modes, and the number of points from the file filename
         """
         with open(self.filename,"r") as file:
             line = file.readline()
@@ -556,20 +569,20 @@ class CFPs_Analyze(object):
             B2 = np.empty([5], dtype = float)   #B_kq,where k = 2
             B4 = np.empty([9], dtype = float)   #B_kq,where k = 4
             B6 = np.empty([13], dtype = float)  #B_kq,where k = 6
-            for i in range(0,nmds):
-                #print("work on mode "+str(i+1))
+            for imode in range(0,nmds):
+                #print("work on mode "+str(imode+1))
                 for j in range(0,npts):
                     line = file.readline()
-                    i = int(line.split()[1])-1
+                    mode = int(line.split()[1])-1
                     line = file.readline()
                     B2 = line.split()
-                    B[i,j,0:5] = B2
+                    B[mode,j,0:5] = B2
                     line = file.readline()
                     B4 = line.split()
-                    B[i,j,5:14] = B4
+                    B[mode,j,5:14] = B4
                     line = file.readline()
                     B6 = line.split()
-                    B[i,j,14:27] = B6    
+                    B[mode,j,14:27] = B6
         B = np.insert(B,(npts+1)//2,0,axis = 1) #add the eq perturbation CFPs
         self.nmdsori = nmds
         self.npts = npts
@@ -577,7 +590,7 @@ class CFPs_Analyze(object):
 
     def read_CFPs_xyz(self):
         """
-        read CFPs, number of modes, and the number of points from the file filename 
+        read CFPs, number of modes, and the number of points from the file filename
         """
         with open(self.filename,"r") as file:
             line = file.readline()
@@ -590,20 +603,20 @@ class CFPs_Analyze(object):
             B2 = np.empty([5], dtype = float)   #B_kq,where k = 2
             B4 = np.empty([9], dtype = float)   #B_kq,where k = 4
             B6 = np.empty([13], dtype = float)  #B_kq,where k = 6
-            for i in range(0,nmds):
-                #print("work on mode "+str(i+1))
+            for imode in range(0,nmds):
+                #print("work on mode "+str(imode+1))
                 for j in range(0,npts):
                     line = file.readline()
-                    i = int(line.split()[1])-1
+                    mode = int(line.split()[1])-1
                     line = file.readline()
                     B2 = line.split()
-                    B[i,j,0:5] = B2
+                    B[mode,j,0:5] = B2
                     line = file.readline()
                     B4 = line.split()
-                    B[i,j,5:14] = B4
+                    B[mode,j,5:14] = B4
                     line = file.readline()
                     B6 = line.split()
-                    B[i,j,14:27] = B6    
+                    B[mode,j,14:27] = B6
         B = np.insert(B,(npts+1)//2,0,axis = 1) #add the eq perturbation CFPs
         self.xyznmd = nmds
         self.npts = npts
@@ -611,7 +624,7 @@ class CFPs_Analyze(object):
 
     def read_gtensors(self,gfile):
         """
-        read CFPs, number of modes, and the number of points from the file filename 
+        read CFPs, number of modes, and the number of points from the file filename
         """
         with open(gfile,"r") as file:
             line = file.readline()
@@ -642,7 +655,7 @@ class CFPs_Analyze(object):
                     line = file.readline()
                     axis = line.split()
                     #print(axis)
-                    gaxis[i,j,0:3] = axis   
+                    gaxis[i,j,0:3] = axis
                     if gaxis[i,j,2] == 0:
                         #print("not")
                         dgtheta[i,j] = 0
@@ -711,7 +724,7 @@ class CFPs_Analyze(object):
                 a = random.uniform(1-x,1+x)
                 B_slope[i,k] = self.B_slope[i,k]*a
         self.B_slope = B_slope
-        
+
     def random_CFPs_mod(self,x):
         """
         generate the random B_kq by choose the random mode
@@ -743,7 +756,7 @@ class CFPs_Analyze(object):
                 B_slope[i,k] = rdmllz[k]*theta_4
             for k in range(14,27):
                 B_slope[i,k] = rdmllz[k]*theta_6
-        self.B_slope = B_slope 
+        self.B_slope = B_slope
 
     def Line_CFPs(self):
         """
@@ -764,7 +777,7 @@ class CFPs_Analyze(object):
 
     def write_CFPs(self,filename):
         """
-        write CFPs, number of modes, and the number of points from the file filename  
+        write CFPs, number of modes, and the number of points from the file filename
         """
         B = self.Bkq
         with open(filename,"w") as file:
@@ -781,10 +794,10 @@ class CFPs_Analyze(object):
                     file.write(" ".join(str(s) for s in B2)+"\n")
                     file.write(" ".join(str(s) for s in B4)+"\n")
                     file.write(" ".join(str(s) for s in B6)+"\n")
-        
+
     def save_picture(self,foldname):
         """
-        save the figture of B_kq correspond to displacement x on every vibration mode 
+        save the figture of B_kq correspond to displacement x on every vibration mode
         """
         if not os.path.exists(foldname):
             os.makedirs(foldname)
@@ -801,9 +814,9 @@ class CFPs_Analyze(object):
             plt.xlim(-0.1,0.1)
             plt.ylim(-200,200)
             plt.legend(loc=0,ncol=1)
-            plt.title("k = {x}".format(x = 2)) 
-            plt.xlabel("x_j") 
-            plt.ylabel("B_kq(cm^-1)") 
+            plt.title("k = {x}".format(x = 2))
+            plt.xlabel("x_j")
+            plt.ylabel("B_kq(cm^-1)")
             plt.savefig("{f}/mode{x}/mode{x}_2.png".format(f=foldname,x=i+1))
             plt.show()
             #print("mode:"+str(i)+" ,k=2")
@@ -812,9 +825,9 @@ class CFPs_Analyze(object):
             plt.xlim(-0.1,0.1)
             plt.ylim(-200,200)
             plt.legend(loc=0,ncol=1)
-            plt.title("k = {x}".format(x = 4)) 
-            plt.xlabel("x_j") 
-            plt.ylabel("B_kq(cm^-1)") 
+            plt.title("k = {x}".format(x = 4))
+            plt.xlabel("x_j")
+            plt.ylabel("B_kq(cm^-1)")
             plt.savefig("{f}/mode{x}/mode{x}_4.png".format(f=foldname,x=i+1))
             plt.show()
             #print("mode:"+str(i)+" ,k=4")
@@ -823,20 +836,18 @@ class CFPs_Analyze(object):
             plt.xlim(-0.1,0.1)
             plt.ylim(-200,200)
             plt.legend(loc=0,ncol=1)
-            plt.title("k = {x}".format(x = 6)) 
-            plt.xlabel("x_j") 
-            plt.ylabel("B_kq(cm^-1)") 
+            plt.title("k = {x}".format(x = 6))
+            plt.xlabel("x_j")
+            plt.ylabel("B_kq(cm^-1)")
             plt.savefig("{f}/mode{x}/mode{x}_6.png".format(f=foldname,x=i+1))
             plt.show()
             #print("mode:"+str(i)+" ,k=6")
-            clear_output()
         return 1
-    
+
     def gen_picture(self,n):
         """
         gen the figture of B_kq correspond to displacement x on vibration mode 'n'
         """
-        clear_output()
         theta_2 = -2/315
         theta_4 = -8/135135
         theta_6 = 4/3864861
@@ -845,9 +856,9 @@ class CFPs_Analyze(object):
         plt.xlim(-1.0,1.0)
         plt.ylim(-400,400)
         plt.legend(loc=0,ncol=1)
-        plt.title("k = {x}".format(x = 2)) 
-        plt.xlabel("x_j") 
-        plt.ylabel("B_kq(cm^-1)") 
+        plt.title("k = {x}".format(x = 2))
+        plt.xlabel("x_j")
+        plt.ylabel("B_kq(cm^-1)")
         plt.show()
         print("mode:"+str(n)+" ,k=2")
         for j in range(5,14):
@@ -855,9 +866,9 @@ class CFPs_Analyze(object):
         plt.xlim(-1.0,1.0)
         plt.ylim(-400,400)
         plt.legend(loc=0,ncol=1)
-        plt.title("k = {x}".format(x = 4)) 
-        plt.xlabel("x_j") 
-        plt.ylabel("B_kq(cm^-1)") 
+        plt.title("k = {x}".format(x = 4))
+        plt.xlabel("x_j")
+        plt.ylabel("B_kq(cm^-1)")
         plt.show()
         print("mode:"+str(n)+" ,k=4")
         for j in range(14,27):
@@ -865,12 +876,12 @@ class CFPs_Analyze(object):
         plt.xlim(-1.0,1.0)
         plt.ylim(-400,400)
         plt.legend(loc=0,ncol=1)
-        plt.title("k = {x}".format(x = 6)) 
-        plt.xlabel("x_j") 
-        plt.ylabel("B_kq(cm^-1)") 
+        plt.title("k = {x}".format(x = 6))
+        plt.xlabel("x_j")
+        plt.ylabel("B_kq(cm^-1)")
         plt.show()
         print("mode:"+str(n)+" ,k=6")
-    
+
     def gen_slope(self,order):
         """
         Fit the linear function of B(X) to x
@@ -910,7 +921,7 @@ class CFPs_Analyze(object):
             self.B_slopexyz = B_slope
 
     def gen_unmassslope(self,order,mol):
-        
+
         B_slope = np.empty([self.nmds,27], dtype = float)
         for i in range(0,self.nmds):
             X,B = self.select_XB(i)
@@ -931,7 +942,7 @@ class CFPs_Analyze(object):
                 B = np.append(B, [Btest[k,...]], axis=0)
                 X = np.append(X,self.X[k])
         return X,B
-    
+
     def gen_B_x(self,x,m,n):
         """
         gen B(X) to x wirh mode m and Bkq sequence n
@@ -941,9 +952,9 @@ class CFPs_Analyze(object):
 
     def transB_sl(self,vecs):
         """
-        transform the \partial H/\partial x to \partial H/\partial Q
+        transform the \\partial H/\\partial x to \\partial H/\\partial Q
         """
-        Select_Atnum = np.loadtxt('inpfile/Atom_list',dtype=int)
+        Select_Atnum = np.atleast_1d(np.loadtxt(self.atom_list,dtype=float)).astype(int)
         B_slope = np.zeros([self.nmds,27],dtype = float)
         B_slope_tot = np.zeros([self.nmds,self.xyznmd,27],dtype = float)
         for i in range(self.nmds):
@@ -958,13 +969,13 @@ class CFPs_Analyze(object):
         self.B_slope = B_slope
         self.B_slope_tot = B_slope_tot
         return B_slope
-    
+
     def transB_sl_select(self,vecs):
         """
-        transform the \partial H/\partial x to \partial H/\partial Q
+        transform the \\partial H/\\partial x to \\partial H/\\partial Q
         """
 
-        First_Atnum = np.loadtxt('inpfile/First_list',dtype=int)
+        First_Atnum = np.atleast_1d(np.loadtxt(self.first_list,dtype=float)).astype(int)
         number = First_Atnum.shape[0]
         B_slope = np.empty([self.nmds,27],dtype = float)
         for i in range(self.nmds):
@@ -981,13 +992,13 @@ class CFPs_Analyze(object):
 class Eigenstates(object):
     """
         the object corresponds to analyze the Eigenstates.
-    """ 
+    """
     def __init__(self, filename):
         self.filename = filename
 
     def read_energies_Pyscf(self):
         """
-        read Energies from the file filename, get the eigenvalues list of E, and the number of eigenstates n )  
+        read Energies from the file filename, get the eigenvalues list of E, and the number of eigenstates n )
         """
         E = []   #B_kq,where k = 2
         with open(self.filename,"r", encoding="utf-8") as file:
@@ -1002,11 +1013,11 @@ class Eigenstates(object):
                     i = 0
                     while True:
                         line = file.readline()
-                        
+
                         if line.split()[0] == "|":
                             #print(line.split())
                             E += [float(line.split()[3])]
-                            i += 1 
+                            i += 1
                         else:
                             self.Vaules = E
                             self.n_states = i
@@ -1015,10 +1026,10 @@ class Eigenstates(object):
                             return 1
             print("not find eigenvaules")
             return 0
-    
+
     def read_energies_OM(self):
         """
-        read Energies from the OpenMolcas file filename, get the eigenvalues list of E, and the number of eigenstates n )  
+        read Energies from the OpenMolcas file filename, get the eigenvalues list of E, and the number of eigenstates n )
         """
         E = []   #B_kq,where k = 2
         with open(self.filename,"r") as file:
@@ -1035,7 +1046,7 @@ class Eigenstates(object):
                         line = file.readline()
                         if line.split()[0] == "w.f.":
                             E += [float(line.split()[3])]
-                            i += 1 
+                            i += 1
 
                         else:
                             self.Vaules = E
@@ -1045,13 +1056,13 @@ class Eigenstates(object):
                             return 1
             print("not find eigenstates")
             return 0
-        
+
     def read_wavefunction_Pyscf(self):
         """
-        read wavefunction as expansion coefficient of |JM>  from the file filename, 
-        return the expansion coefficient matrix A,B(\Psi = (A*+Bi)*\JM) )  
+        read wavefunction as expansion coefficient of |JM>  from the file filename,
+        return the expansion coefficient matrix A,B(\\Psi = (A*+Bi)*\\JM) )
         """
-        pattern = re.compile(r"[+-]?\d+\.\d+|[+-]?\d+")   #determine the re pattern of number needed to be found 
+        pattern = re.compile(r"[+-]?\d+\.\d+|[+-]?\d+")   #determine the re pattern of number needed to be found
         A = np.empty([self.n_states,self.n_states], dtype = float)
         B = np.empty([self.n_states,self.n_states], dtype = float)
         with open(self.filename,"r", encoding="utf-8") as file:
@@ -1069,14 +1080,13 @@ class Eigenstates(object):
                             line = file.readline()
                             A[k,i] = float(line.split('|')[2])
                             B[k,i] = float(line.split('|')[3])
-                    C = A + B*1j  
-                    np.savetxt("wavefunction_C",C)  
+                    C = A + B*1j
                     self.A = A
-                    self.B = B  
-            
+                    self.B = B
+
     def read_energies_M(self):
             """
-            read Energies from the Molcas file filename, get the eigenvalues list of E, and the number of eigenstates n )  
+            read Energies from the Molcas file filename, get the eigenvalues list of E, and the number of eigenstates n )
             """
             E = []   #B_kq,where k = 2
             with open(self.filename,"r") as file:
@@ -1093,7 +1103,7 @@ class Eigenstates(object):
                             line = file.readline()
                             if line.split()[0] == "w.f.":
                                 E += [float(line.split()[3])]
-                                i += 1 
+                                i += 1
 
                             else:
                                 self.Vaules = E
@@ -1103,11 +1113,11 @@ class Eigenstates(object):
                                 return 1
                 print("not find eigenstates")
                 return 0
-    
+
     def read_wavefunction_M(self):
         """
-        read wavefunction as expansion coefficient of |JM>  from the Molcas file filename, 
-        return the expansion coefficient matrix A,B(\Psi = (A*+Bi)*\JM) )  
+        read wavefunction as expansion coefficient of |JM>  from the Molcas file filename,
+        return the expansion coefficient matrix A,B(\\Psi = (A*+Bi)*\\JM) )
         """
         A = np.empty([self.n_states,self.n_states], dtype = float)
         B = np.empty([self.n_states,self.n_states], dtype = float)
@@ -1136,14 +1146,14 @@ class Eigenstates(object):
                                 A[j+self.n_states//4,i] = float(a.split()[0])
                                 B[j+self.n_states//4,i] = float(a.split()[1])
                     self.A = A
-                    self.B = B   
-                    
+                    self.B = B
+
     def read_wavefunction_OM(self):
         """
-        read wavefunction as expansion coefficient of |JM>  from the OpenMolcas file filename, 
-        return the expansion coefficient matrix A,B(\Psi = (A*+Bi)*\JM) )  
+        read wavefunction as expansion coefficient of |JM>  from the OpenMolcas file filename,
+        return the expansion coefficient matrix A,B(\\Psi = (A*+Bi)*\\JM) )
         """
-        pattern = re.compile(r"[+-]?\d+\.\d+|[+-]?\d+")   #determine the re pattern of number needed to be found 
+        pattern = re.compile(r"[+-]?\d+\.\d+|[+-]?\d+")   #determine the re pattern of number needed to be found
         A = np.empty([self.n_states,self.n_states], dtype = float)
         B = np.empty([self.n_states,self.n_states], dtype = float)
         with open(self.filename,"r") as file:
@@ -1179,11 +1189,11 @@ class Eigenstates(object):
                                 temp = pattern.findall(line.split('|')[2].split()[1])
                                 B[j+self.n_states//2,i] = float(temp[0])*10**float(temp[1])
                     self.A = A
-                    self.B = B  
-    
+                    self.B = B
+
     def extract_CFPs(self):
         """
-        extract  CFPs from the file filename, return three list of B_kq, correspond to k=2,4,6)  
+        extract  CFPs from the file filename, return three list of B_kq, correspond to k=2,4,6)
         """
         pattern = re.compile(r"[+-]?\d+\.\d+|[+-]?\d+")   #determine the re pattern of number needed to be found
         B2 = np.empty([5], dtype = float)   #B_kq,where k = 2
@@ -1222,13 +1232,13 @@ class Eigenstates(object):
         B_eq = np.empty([27], dtype = float)
         B_eq[0:5] = B2
         B_eq[5:14] = B4
-        B_eq[14:27] = B6  
+        B_eq[14:27] = B6
         self.B_eq = B_eq
         return B_eq
 
     def diag_H(self):
         """
-        diag matrix <JM_1|B_{kq}O_{kq}|JM_2>  
+        diag matrix <JM_1|B_{kq}O_{kq}|JM_2>
         """
         SH = np.empty([self.n_states,self.n_states], dtype = complex)
         for i in range(0,self.n_states):
@@ -1245,7 +1255,7 @@ class Eigenstates(object):
                 self.A[i,j] = V[j,i].real
                 self.B[i,j] = V[j,i].imag
         return E,V
-    
+
     def propare_TO(self,TO_foldname):
         print("check the TO")
         if Path(TO_foldname+"/"+str(self.n_states)+"_real.eso").is_file() and Path(TO_foldname+"/"+str(self.n_states)+"_imag.eso").is_file():
@@ -1262,7 +1272,7 @@ class Eigenstates(object):
         TO = np.empty([self.n_states,self.n_states,27], dtype = complex)
         J = float((self.n_states-1)/2)
         eng = matlab.engine.start_matlab()
-        for i in range(0,27): 
+        for i in range(0,27):
             k = get_kq(i)[0]
             q = get_kq(i)[1]
             TO[...,i] = eng.stev(float(J),float(k),float(q))
@@ -1282,8 +1292,8 @@ class Eigenstates(object):
             #print(jantemp)
             JAN[i] = jantemp
         self.JAN = JAN
-        
-    
+
+
     def read_TO_matrix(self,TO_foldname):
         """
         read the TO matrix from the fold "TO"
@@ -1309,14 +1319,14 @@ class Eigenstates(object):
         TO = A+B*1j
         self.J = J
         self.TO = TO
-    
+
     def gen_sph_matrix(self,VP_filename,Modes_list,CFPs,If_select_sigma,select_sigma):
         """
         Generate the perturbation potential matrix of each modes, output the matrix in VPs_filename
         """
         #VP_nmds = Modes_list.shape[0]
         VP = np.zeros([self.n_states,self.n_states,CFPs.nmds], dtype = complex)
-        with open(VP_filename+".dat","w") as file:    
+        with open(VP_filename+".dat","w") as file:
             file.write("The Perturbation Potential Matrix\n")
             file.write("Total modes {x}\n".format(x=CFPs.nmds))
             file.write("Max total angular momentum {x}\n".format(x=self.J))
@@ -1334,7 +1344,7 @@ class Eigenstates(object):
         os.rename(VP_filename+".dat",VP_filename)
         self.VP = VP
         return VP
-    
+
     def read_sph_matrix(self,VP_filename):
         """
         read the perturbation potential matrix of each modes from the VPs_filename
@@ -1356,34 +1366,30 @@ class Eigenstates(object):
                 for i in range(0,nstates):
                     line = file.readline()
                     for f in range(0,nstates):
-                        VP[i,f,j] = complex(line.split()[f])  
+                        VP[i,f,j] = complex(line.split()[f])
         self.VP = VP
         return VP
-    
+
     def s_ph(self,f,i,Bkq):
         """
         calculate the spin-phonon coupling element term |<f|H|i>|^2 of Transition probability,unit is (cm^-1)^2
         """
-        a = 0
-        b = 0
-        for k in range(0,27):
-            B1 = Bkq[k]
-            #B2 = -Bkq[k]
-            H = 0
-            for m in range(0,self.n_states):
-                for n in range(0,self.n_states):
-                    H += self.TO[m,n,k]*complex(self.A[f,m]-self.B[f,m]*1j)*complex(self.A[i,n]+self.B[i,n]*1j) 
-            a += B1*H
-            #b += B2*H
-        return a
-    
+        # Vectorised form of the original scalar loop:
+        #   sum_k Bkq[k] * sum_{m,n} TO[m,n,k] * (A[f,m]-i B[f,m]) * (A[i,n]+i B[i,n])
+        vf = self.A[f, :] - 1j * self.B[f, :]
+        vi = self.A[i, :] + 1j * self.B[i, :]
+        coef = np.einsum('mnk,m,n->k', self.TO, vf, vi)
+        Bkq = np.asarray(Bkq)
+        n = min(coef.shape[0], Bkq.shape[0])
+        return np.dot(Bkq[:n], coef[:n])
+
     def gen_sph_matrix_Jz(self,VP_filename,Modes_list,CFPs,If_select_sigma,select_sigma):
         """
         Generate the perturbation potential matrix of each modes, output the matrix in VPs_filename
         """
         #VP_nmds = Modes_list.shape[0]
         VP = np.zeros([self.n_states,self.n_states,CFPs.nmds], dtype = complex)
-        with open(VP_filename+".dat","w") as file:    
+        with open(VP_filename+".dat","w") as file:
             file.write("The Perturbation Potential Matrix\n")
             file.write("Total modes {x}\n".format(x=CFPs.nmds))
             file.write("Max total angular momentum {x}\n".format(x=self.J))
@@ -1401,9 +1407,9 @@ class Eigenstates(object):
         os.rename(VP_filename+".dat",VP_filename)
         self.VP = VP
         return VP
-    
 
-    
+
+
     def s_ph_Jz(self,f,i,Bkq):
         """
         calculate the spin-phonon coupling element term |<f|H|i>|^2 of Transition probability,unit is (cm^-1)^2
@@ -1426,7 +1432,7 @@ class Eigenstates(object):
         #print(Eigen.JAN)
         n_states = self.n_states
         H = np.zeros([n_states, n_states],dtype=complex)
-        
+
         for f in range(0,n_states):
             for i in range(0,n_states):
                 Ht = 0
@@ -1461,7 +1467,7 @@ class Eigenstates(object):
         #         H = 0
         #         for m in range(0,16):
         #             for n in range(0,16):
-        #                 H += Eigen.TO[m,n,k]*complex(Anew[f,m]-Bnew[f,m]*1j)*complex(Anew[f,n]+Bnew[f,n]*1j) 
+        #                 H += Eigen.TO[m,n,k]*complex(Anew[f,m]-Bnew[f,m]*1j)*complex(Anew[f,n]+Bnew[f,n]*1j)
         #         a += B1*H
         #     #print(a+917)
 
@@ -1493,7 +1499,7 @@ class Eigenstates(object):
                 BP1[i,a] = Bnew[i,a]+dC.imag
         self.A = AP1
         self.B = BP1
-    
+
     def Expansion(self,j):
         table = PrettyTable(["JM","expansion real","expansion image","percentage"])
         print("expansion of state "+str(j))
@@ -1506,19 +1512,19 @@ class Eigenstates(object):
 class TPs_Analyze(object):
     """
         the object corresponds to analyze the Transition probability. Each temperature will have its own object
-    """ 
-    OBT_list = np.empty((0,),dtype = float) #the temprature of each Class variable 
-    OBRate_list = np.empty((0,),dtype = float) #the relaxation rate of Orbach process of each Class variable 
-    OBRate_list2 = np.empty((0,),dtype = float) #the relaxation rate of Orbach process of each Class variable 
-    RMT_list = np.empty((0,),dtype = float) #the temprature of each Class variable 
+    """
+    OBT_list = np.empty((0,),dtype = float) #the temprature of each Class variable
+    OBRate_list = np.empty((0,),dtype = float) #the relaxation rate of Orbach process of each Class variable
+    OBRate_list2 = np.empty((0,),dtype = float) #the relaxation rate of Orbach process of each Class variable
+    RMT_list = np.empty((0,),dtype = float) #the temprature of each Class variable
     RMRate_list = np.empty((0,),dtype = float) #the relaxation rate of Raman process of each Class variable
     RMRate_list2 = np.empty((0,),dtype = float) #the relaxation rate of Raman process of each Class variable
     RMRate_list_lt = np.empty((0,),dtype = float) #the relaxation rate of Raman process of each Class variable
-    T_list = np.empty((0,),dtype = float) #the temprature of each Class variable 
+    T_list = np.empty((0,),dtype = float) #the temprature of each Class variable
     Rate_list = np.empty((0,),dtype = float) #the relaxation rate of each Class variable
     Pcross_list = np.empty((0,),dtype = float)
 
-    
+
     def __init__(self,T,Modes_list,CAL_RELAX):
         self.T = T
         TP_nmds = Modes_list.shape[0]
@@ -1527,7 +1533,7 @@ class TPs_Analyze(object):
         self.OBTP = np.zeros([16,16], dtype = float)
         self.RMTP = np.zeros([16,16], dtype = float)
         self.RELAX = CAL_RELAX
-        
+
     def read_OBTPs(self,filename1):
         """
         read TPs of Orbach process from filename1,
@@ -1550,7 +1556,7 @@ class TPs_Analyze(object):
                 j = int(line.split()[1])-1
                 for i in range(0,nstates):
                     line = file.readline()
-                    TPs[i,...,j] = line.split()    
+                    TPs[i,...,j] = line.split()
         self.OBTPs = TPs
         self.nmds =nmds
         self.nstates = nstates
@@ -1559,7 +1565,7 @@ class TPs_Analyze(object):
         sum over j to get the final Transition probability matrix TP
         """
         for j in range(nmds):
-            TP += TPs[...,j]    
+            TP += TPs[...,j]
 
         for i in range(0,nstates):
             for j in range(0,nstates):
@@ -1612,7 +1618,7 @@ class TPs_Analyze(object):
         TPs_Analyze.OBT_list = np.append(TPs_Analyze.OBT_list,self.T)
         TPs_Analyze.OBRate_list = np.append(TPs_Analyze.OBRate_list,self.OBrate[1])
         return TP,rate,Vector
-    
+
     def read_OBTPs_nd(self,filename1):
         """
         read TPs of Orbach process from filename1,
@@ -1635,7 +1641,7 @@ class TPs_Analyze(object):
                 for i in range(0,nstates**2):
                     line = file.readline()
                     for k in range(0,nstates**2):
-                        TPs[i,k,j] = complex(line.split()[k])    
+                        TPs[i,k,j] = complex(line.split()[k])
         self.OBTPs = TPs
         self.nmds =nmds
         self.nstates = nstates
@@ -1644,7 +1650,7 @@ class TPs_Analyze(object):
         sum over j to get the final Transition probability matrix TP
         """
         for j in range(nmds):
-            TP += TPs[...,j]    
+            TP += TPs[...,j]
 
         """
         Diagonalization TP matrix to get -rate
@@ -1684,7 +1690,7 @@ class TPs_Analyze(object):
         TPs_Analyze.OBT_list = np.append(TPs_Analyze.OBT_list,self.T)
         TPs_Analyze.OBRate_list = np.append(TPs_Analyze.OBRate_list,self.OBrate[i])
         return TP,rate,Vector
-        
+
     def read_RMTPs(self,filename2):
         """
         read TPs of Orbach process from filename1,
@@ -1721,7 +1727,7 @@ class TPs_Analyze(object):
         for j in range(nmds):
             for k in range(nmds):
                 if j >= k:
-                    TP += TPs[...,j,k] 
+                    TP += TPs[...,j,k]
         for i in range(0,nstates):
             TP[i,i] = 0
             for j in range(0,nstates):
@@ -1736,7 +1742,7 @@ class TPs_Analyze(object):
         eigenvalues,Vector = eig(TP)
         rate = -eigenvalues
         rate,Vector = Sort_EV(rate,Vector)
-        
+
         self.RMrate = rate
         self.RMVector = Vector
         TPP = np.zeros([self.nstates,self.nstates],dtype = float)
@@ -1763,7 +1769,7 @@ class TPs_Analyze(object):
             print('Total_Mag[i]',Total_Mag[i])
             print(Vector[i,...])
             Mag+=lamda*Total_Mag[i]*Vector[i,...]
-        
+
         self.Mag = Mag
         self.lamda = lamda
         """
@@ -1775,7 +1781,7 @@ class TPs_Analyze(object):
         TPs_Analyze.RMRate_list2 = np.append(TPs_Analyze.RMRate_list2,self.RMrate[0])
         TPs_Analyze.RMRate_list_lt = np.append(TPs_Analyze.RMRate_list_lt,self.RMTP[1,0])
         return TP
-    
+
     def sum_OBRMTPs(self):
         """
         sum over the orbach and raman master equation
@@ -1826,37 +1832,37 @@ class TPs_Analyze(object):
         TPs_Analyze.T_list = np.append(TPs_Analyze.T_list,self.T)
         TPs_Analyze.Rate_list = np.append(TPs_Analyze.Rate_list,self.rate[1])
         return TP,rate,Vector
-        
+
     def gen_TP(self):
         """
-        sum the TPs from modes 1 to modes n,the default n is self.nmds. return the Transitian posibility matrix TP, 
-        rate(-eigenvalues) and eigenvectors. The TP will save in filename and keep m(default=5) significant digits  
+        sum the TPs from modes 1 to modes n,the default n is self.nmds. return the Transitian posibility matrix TP,
+        rate(-eigenvalues) and eigenvectors. The TP will save in filename and keep m(default=5) significant digits
         """
         return self.TP,self.rate,self.Vector
-    
+
     def save_TP(self,m=5,filename = "unfilename"):
         """
-        sum the TPs with modes list. return the Transitian posibility matrix TP, 
-        rate(-eigenvalues) and eigenvectors. The TP will save in filename and keep m(default=5) significant digits  
+        sum the TPs with modes list. return the Transitian posibility matrix TP,
+        rate(-eigenvalues) and eigenvectors. The TP will save in filename and keep m(default=5) significant digits
         """
-        
+
         if filename == "unfilename":
             filename = "TP_{T}_{x}.tps".format(T = self.T,x = self.TP_nmds)
         np.savetxt(filename,self.TP,fmt='%1.{x}e'.format(x = m),delimiter=' ')
         return self.TP,self.rate,self.Vector
-    
+
     def save_TPP(self,filename = "unfilename"):
         """
-        sum the TPs with modes list. return the Transitian posibility matrix TP, 
-        rate(-eigenvalues) and eigenvectors. The TP will save in filename and keep m(default=5) significant digits  
+        sum the TPs with modes list. return the Transitian posibility matrix TP,
+        rate(-eigenvalues) and eigenvectors. The TP will save in filename and keep m(default=5) significant digits
         """
-        
+
         if filename == "unfilename":
             filename = "TPP_{T}_{x}.tps".format(T = self.T,x = self.TP_nmds)
         TPP = self.OBTPP*100
         np.savetxt(filename,TPP,fmt='%1.2f',delimiter=' ')
         return self.TP,self.rate,self.Vector
-        
+
     def RMsimulation(self):
         """
         Use the uniforimzation method to calculate the relaxation time
@@ -1873,7 +1879,7 @@ class TPs_Analyze(object):
                     P_states_temp[i] += self.TPP[i,j]*P_states[j]
             P_states_temp[0] = P_states_temp[0]+P_states[0]
             P_states_temp[1] = P_states_temp[1]+P_states[1]
-            P_states = P_states_temp  
+            P_states = P_states_temp
             #print('%1.5f'%P_states[0],'%1.6f'%P_states[1])
             if P_states[0]+P_states[1]>0.999999999:
                 #print(-self.TP[0,0]*P_states[1]*2,self.rate[1])
@@ -1898,7 +1904,7 @@ class TPs_Analyze(object):
                     P_states_temp[i] += self.OBTPP[i,j]*P_states[j]
             P_states_temp[0] = P_states_temp[0]+P_states[0]
             P_states_temp[1] = P_states_temp[1]+P_states[1]
-            P_states = P_states_temp  
+            P_states = P_states_temp
             #print('%1.5f'%P_states[0],'%1.6f'%P_states[1])
             if P_states[0]+P_states[1]>0.999999999:
                 #print(-self.TP[0,0]*P_states[1]*2,self.rate[1])
@@ -1925,7 +1931,7 @@ class TPs_Analyze(object):
             for j in range(self.nstates):
                     TPP[i,j] = Delta(i,j)+uniTP[i,j]/cm
         while True:
-            P_states = np.dot(TPP,P_states) 
+            P_states = np.dot(TPP,P_states)
             #print('%1.5f'%P_states[0],'%1.6f'%P_states[1])
             if P_states[0]+P_states[1]>(1-1e-9):
                 #print(-self.TP[0,0]*P_states[1]*2,self.rate[1])
@@ -1933,7 +1939,7 @@ class TPs_Analyze(object):
                 #print(P_states[1])
                 TPs_Analyze.Pcross_list = np.append(TPs_Analyze.Pcross_list,self.Pcross)
                 return P_states[1]
-            
+
     def uniformization2(self):
         """
         Use the uniforimzation method to calculate the relaxation time
@@ -1950,7 +1956,7 @@ class TPs_Analyze(object):
                     P_states_temp[i] += self.TPP[i,j]*P_states[j]
             P_states_temp[0] = P_states_temp[0]+P_states[0]
             P_states_temp[1] = P_states_temp[1]+P_states[1]
-            P_states = P_states_temp  
+            P_states = P_states_temp
             #print('%1.5f'%P_states[0],'%1.6f'%P_states[1])
             if P_states[0]+P_states[1]>0.999999999:
                 #print(-self.TP[0,0]*P_states[1]*2,self.rate[1])
@@ -1978,7 +1984,7 @@ class TPs_Analyze(object):
         self.OBTPRrate = OBTPRrate
         self.OBTPRD = OBTPRD
         figOBT = plt.figure(num='FigOBT').add_subplot(111)
-        figOBT.scatter(Eigen.JAN,Eigen.Vaules,color='k')        
+        figOBT.scatter(Eigen.JAN,Eigen.Vaules,color='k')
         #colormap = cm.get_cmap(name='plasma') # 获取蓝色渐近色
         colormap = mpl.colormaps['plasma']
         cycles = 7
@@ -2010,9 +2016,9 @@ class TPs_Analyze(object):
         cb = plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=colormap),cax=cax, orientation='vertical') # 设置colormap
         cb.set_ticks([1,7])
         cb.set_ticklabels(["10$^{%s}$"%(x1), "10$^{%s}$ s$^{-1}$"%(x2)])
-        figOBT.set_title("Transition rate for Orbach at {T} K".format(T = T)) 
-        figOBT.set_xlabel("<J$_Z$>") 
-        figOBT.set_ylabel("Energy (cm$^{-1}$)") 
+        figOBT.set_title("Transition rate for Orbach at {T} K".format(T = T))
+        figOBT.set_xlabel("<J$_Z$>")
+        figOBT.set_ylabel("Energy (cm$^{-1}$)")
         plt.savefig("OBTrans.eps",bbox_inches='tight')
         im2 = plt.matshow(self.OBTPP,  cmap = plt.cm.Blues)
         cb = plt.colorbar(im2)
@@ -2036,7 +2042,7 @@ class TPs_Analyze(object):
             Nmds = np.append(Nmds,"others")
             Trans = np.append(Trans,1-np.sum(Trans))
             figOBpie.pie(Trans,labels=Nmds,autopct='%.1f%%', )
-            figOBpie.set_title("Transition probability [{x},0] for Orbach at {T}K".format(x = i,T = self.T)) 
+            figOBpie.set_title("Transition probability [{x},0] for Orbach at {T}K".format(x = i,T = self.T))
             plt.show()
 
 
@@ -2053,7 +2059,7 @@ class TPs_Analyze(object):
                 if abs(omega_fi-omega1) < self.RELAX.select_sigma:
                     a1 = np.exp(-0.5*((omega_fi-omega1)/self.RELAX.sigma)**2)/(self.RELAX.sigma*np.sqrt(2.0*np.pi))
                     a2 = 1/(np.exp(const.hbar*2*np.pi*const.c*omega1/T/const.kb)-1)
-                    
+
                 Datas = np.zeros([7],dtype=float)
                 Datas[0] = k+1
                 Datas[1] = self.RELAX.mol.freqs[k]
@@ -2066,7 +2072,7 @@ class TPs_Analyze(object):
                 #print("mods","Freqs","Matrix","V","G","delta","n")
                 #print('%1.0f'%Datas[0],'%1.1f'%Datas[1],'%1.2e'%Datas[2],'%1.2e'%Datas[3],'%1.2e'%Datas[4],'%1.2e'%Datas[5],'%1.2e'%Datas[6])
             print(table)
-      
+
     def Mod_Analyse_RM(self,ratio=10):
         T = self.T
         RMTPrate= np.zeros([self.nstates],dtype = float) #total rate for every column
@@ -2086,7 +2092,7 @@ class TPs_Analyze(object):
         self.RMTPRrate = RMTPRrate
         self.RMTPRD = RMTPRD
         figRMT = plt.figure(num='FigRMT').add_subplot(111)
-        figRMT.scatter(Eigen.JAN,Eigen.Vaules,color='k')        
+        figRMT.scatter(Eigen.JAN,Eigen.Vaules,color='k')
         #colormap = cm.get_cmap(name='plasma') # 获取蓝色渐近色
         colormap = mpl.colormaps['plasma']
         cycles = 8
@@ -2118,9 +2124,9 @@ class TPs_Analyze(object):
         cb = plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=colormap),cax=cax, orientation='vertical') # 设置colormap
         cb.set_ticks([1,8])
         cb.set_ticklabels(["10$^{%s}$"%(x1), "10$^{%s}$ s$^{-1}$"%(x2)])
-        figRMT.set_title("Transition rate for Raman at {T} K".format(T = T)) 
-        figRMT.set_xlabel("<J$_Z$>") 
-        figRMT.set_ylabel("Energy (cm$^{-1}$)") 
+        figRMT.set_title("Transition rate for Raman at {T} K".format(T = T))
+        figRMT.set_xlabel("<J$_Z$>")
+        figRMT.set_ylabel("Energy (cm$^{-1}$)")
         plt.savefig("RMTrans.eps",bbox_inches='tight')
 
         im2 = plt.matshow(self.RMTPP,  cmap = plt.cm.Blues)
@@ -2148,10 +2154,10 @@ class TPs_Analyze(object):
             Nmds = np.append(Nmds,"others")
             Trans = np.append(Trans,1-np.sum(Trans))
             figRMpie.pie(Trans,labels=Nmds,autopct='%.1f%%', )
-            figRMpie.set_title("Transition probability [{x},0] for Raman at {T}K".format(x = i,T = self.T)) 
+            figRMpie.set_title("Transition probability [{x},0] for Raman at {T}K".format(x = i,T = self.T))
             plt.savefig("RMPie.eps",bbox_inches='tight')
-            plt.show()          
-            
+            plt.show()
+
             size = np.shape(Nmdsc1)[0]
             tablepp = PrettyTable(["mods1","mods2","Freqs1","Freqs2","Matrix","V","G","delta","n1","n2"])
             tablepm = PrettyTable(["mods1","mods2","Freqs1","Freqs2","Matrix","V","G","delta","n1","n2"])
@@ -2225,7 +2231,7 @@ class TPs_Analyze(object):
                     Datas[8] = a2
                     Datas[9] = a3
                     tablemm.add_row(['%1.0f'%Datas[0],'%1.0f'%Datas[1],'%1.1f'%Datas[2],'%1.1f'%Datas[3],'%1.2e'%Datas[4],'%1.2e'%Datas[5],'%1.2e'%Datas[6],'%1.2e'%Datas[7],'%1.2e'%Datas[8],'%1.2e'%Datas[9]])
-            
+
             print("tablepp")
             print(tablepp)
             print("tablepm")
@@ -2260,10 +2266,10 @@ def Sort_left_EV(E,V):
                 V[[i,i+1],:]=V[[i+1,i],:]
         Elength -= 1
     return E,V
-      
+
 def get_Mod_square(a):
     """
-    get Mod_square of a complex a 
+    get Mod_square of a complex a
     """
     return a.real**2+a.imag**2
 
@@ -2281,7 +2287,7 @@ def get_Bkq_sequence(k,q):
         return k+q+14
     else:
         print("you input wrong k")
-        return 0 
+        return 0
 
 def get_kq(n):
     """
@@ -2297,7 +2303,7 @@ def get_kq(n):
             return 6,n-20
         else:
             print("you input wrong n")
-            return 0,0 
+            return 0,0
     else:
             print("you input wrong n")
             return 0,0
@@ -2307,7 +2313,7 @@ def Delta(a,b):
         return 1
     else:
         return 0
-        
+
 def gen_X(T,omega):
     """
     get the displacement x at T(the unit of x is x_0)
@@ -2328,12 +2334,12 @@ def generate_sim_lorentz(A, w, size=1):
     """
     生成符合指定洛伦兹分布的随机数
     分布公式：y = (2*A/pi)*(w/(4*x^2 + w^2))
-    
+
     参数:
         A: 振幅参数
         w: 宽度参数
         size: 生成的随机数数量，默认值为1
-        
+
     返回:
         符合指定洛伦兹分布的随机数数组
     """
@@ -2343,7 +2349,7 @@ def generate_sim_lorentz(A, w, size=1):
     # 根据逆变换法，从指定的洛伦兹分布生成随机数
     # 推导过程：通过对分布函数求逆得到此转换公式
     lorentz_rvs = (w / 2) * np.tan(np.pi * (uniform_rvs/A - 1/2))
-    
+
     return lorentz_rvs
 
 def phonon_strain(Ef,Ei,omega,T):
@@ -2353,7 +2359,7 @@ def phonon_strain(Ef,Ei,omega,T):
     if Ef < Ei:
         return 1
     elif Ef == Ei:
-        return 0 
+        return 0
     elif Ef > Ei:
         return np.exp(-const.hbar*2*np.pi*const.c*omega/T/const.kb)
 
@@ -2375,7 +2381,7 @@ def green_OB(omega,omega1,sigma,T):
 
 def calculate_angle_between_lines(d1, d2):
     """
-    if we want to rotate the vector from d2 to d1, we need an axis and an angle. Here calculates the angle 
+    if we want to rotate the vector from d2 to d1, we need an axis and an angle. Here calculates the angle
     """
     cos_angle = np.dot(d1, d2) / (np.linalg.norm(d1) * np.linalg.norm(d2))
     angle = np.arccos(cos_angle)
@@ -2426,7 +2432,7 @@ def get_Modes_list1(nmds,Eigen,mol,select_sigma):
             for i in range(f+2,Eigen.n_states,2):
                 omega = abs(Eigen.Vaules[f]-Eigen.Vaules[i])
                 if abs(mol.freqs[j]-omega) < select_sigma:
-                    Modes_list = np.append(Modes_list,j)            
+                    Modes_list = np.append(Modes_list,j)
     Modes_list = np.unique(Modes_list)
     Modes_list = np.sort(Modes_list)
     return Modes_list
@@ -2512,15 +2518,15 @@ def draw_std_line(name_of_alg,color_index,avg,std,iters,nloop=1,Tmin=-1,Tmax=100
         if If_pic:
             plt.errorbar(iters, avg,std,color=color,capsize=4)
         return iters,avg,std
-    
+
     #plt.fill_between(iters, r1, r2, color=color, alpha=0.2)
-    
+
 def if_leq(a,b):
     if a>b:
         return 0
-    else: 
+    else:
         return 1
-    
+
 def density_spc(CFPs,mol,maxlim,filename):
     nmds = CFPs.nmds
     Ba = np.zeros([nmds],dtype=float)
@@ -2539,8 +2545,8 @@ def density_spc(CFPs,mol,maxlim,filename):
     for i in range(0,nmds):
         y += np.exp(-0.5*((x-mol.freqs[i])/5)**2)/(5*np.sqrt(2.0*np.pi))*Ba[i]
     plt.plot(x, y)
-    plt.xlabel("$\mathit{\omega}$ (cm$^{-1}$)") 
-    plt.ylabel("SPC((cm$^{-1}$)$^{2}$)") 
+    plt.xlabel(r"$\mathit{\omega}$ (cm$^{-1}$)")
+    plt.ylabel("SPC((cm$^{-1}$)$^{2}$)")
     #plt.ylim(0,8000)
     np.savetxt(filename+'.txt',y)
     plt.savefig(filename+'.png',bbox_inches='tight')
@@ -2560,7 +2566,6 @@ def CarHs_atom(CFPs):
             for j in range(14,27):
                 CarHs[i] += (CFPs.B_slopexyz[i*3+k,j])**2
     orig.set_initial_magnetic_moments(CarHs)
-    view(orig) 
 
 def SPC_atom(CFPs):
     nmds = CFPs.nmds
@@ -2579,7 +2584,6 @@ def SPC_atom(CFPs):
                     CarHs[i] += (CFPs.B_slope_tot[imd,i*3+k,j])**2
     print(CarHs)
     orig.set_initial_magnetic_moments(CarHs)
-    view(orig) 
 
 def density_spc_3D(CFPs,mol,maxlim,maxAA,filename):
     from mpl_toolkits.mplot3d import Axes3D
@@ -2610,14 +2614,14 @@ def density_spc_3D(CFPs,mol,maxlim,maxAA,filename):
                 Ba[i] += (CFPs.B_slope[i,j]/theta_4)**2
             for j in range(14,27):
                 Ba[i] += (CFPs.B_slope[i,j]/theta_6)**2
-        
+
         for i in range(0,nmds):
             Z[k,...] += np.exp(-0.5*((x-mol.freqs[i])/5)**2)/(5*np.sqrt(2.0*np.pi))*Ba[i]
         if k > 0:
             dZ[k,...] = np.abs(Z[k,...]-Z[k-1,...])
     surf = ax.plot_surface(X, Y, Z, cmap='viridis')
 
-    ax.set_xlabel("$\mathit{\omega}$ (cm$^{-1}$)")
+    ax.set_xlabel(r"$\mathit{\omega}$ (cm$^{-1}$)")
     ax.set_ylabel("range")
     ax.set_zlabel("SPC((cm$^{-1}$)$^{2}$)")
     ax.set_xlim(0,maxlim)
@@ -2631,7 +2635,7 @@ def density_spc_3D(CFPs,mol,maxlim,maxAA,filename):
     fig2 = plt.figure(figsize=(8, 6))
     ax2 = fig2.add_subplot(111, projection='3d')
     surf2 = ax2.plot_surface(X, Y, dZ, cmap='viridis')
-    ax2.set_xlabel("$\mathit{\omega}$ (cm$^{-1}$)")
+    ax2.set_xlabel(r"$\mathit{\omega}$ (cm$^{-1}$)")
     ax2.set_ylabel("range")
     ax2.set_zlabel("dSPC((cm$^{-1}$)$^{2}$)")
     ax2.set_xlim(0,maxlim)
@@ -2641,11 +2645,11 @@ def density_spc_3D(CFPs,mol,maxlim,maxAA,filename):
     plt.savefig(filename+'.png',bbox_inches='tight')
     plt.show()
     plt.plot(y, Num)
-    plt.xlabel("range") 
-    plt.ylabel("Number of atoms") 
+    plt.xlabel("range")
+    plt.ylabel("Number of atoms")
     #plt.ylim(0,8000)
     #np.savetxt(filename+'.txt',y)
-    
+
     plt.show()
 
 def density_spc_xyz(B_slope_xyz,mol,filename):
@@ -2661,8 +2665,8 @@ def density_spc_xyz(B_slope_xyz,mol,filename):
         if Ba[i]>50:
             print(i,Select_Atnum[i])
     plt.scatter(Xi, Ba)
-    plt.xlabel("distance ($\AA$)") 
-    plt.ylabel("SPC((cm$^{-1}$)$^{2}$)") 
+    plt.xlabel(r"distance ($\AA$)")
+    plt.ylabel("SPC((cm$^{-1}$)$^{2}$)")
     #plt.ylim(0,0.12)
     plt.savefig(filename,bbox_inches='tight')
     plt.show()
@@ -2673,7 +2677,7 @@ def funcCTn(x,C,n):
 def gen_T_list(pinput):
     If_T_step = bool(pinput['If_T_step'])
     nTrange = int(pinput['nTrange'])
-    T_list = np.empty((0,),dtype = int) 
+    T_list = np.empty((0,),dtype = int)
     for i in range(1,nTrange+1):
         Tstr = pinput['Trange{x}'.format(x = i)]
         Tmin = int(Tstr.split(",")[0])
@@ -2702,20 +2706,20 @@ def draw_uni(TPlist_rds,T_list,Mlabel,Out_foldname,If_pic=True):
     #print(TPlist_rds)
     if If_pic:
         fig2.plot(X(TPs_Analyze.T_list),Y(TPlist_rds),label=r'$\Gamma_{11}$',marker = 'o')
-        fig2.plot(X(TPs_Analyze.T_list),Y(TPs_Analyze.Pcross_list*2),label='$P_{\mathrm{cross}}$',marker = 'o')            
+        fig2.plot(X(TPs_Analyze.T_list),Y(TPs_Analyze.Pcross_list*2),label=r'$P_{\mathrm{cross}}$',marker = 'o')
         fig2.plot(X(TPs_Analyze.T_list),Y(unirate_list),label=r'$\tau_{\mathrm{MKV}}$',marker = 'o')
     ln1 = np.log(TPlist_rds)
-    OBimfor = np.polyfit(X(T_list), ln1, 1) 
+    OBimfor = np.polyfit(X(T_list), ln1, 1)
     logtau = np.log10(np.exp(OBimfor[1]))
     print(Mlabel+"U_{eff} of gam11 Orbach is "+'%1.1f'%OBimfor[0]+" K")
     print("log(tau_mkv) is "+'%1.2f'%logtau+" s")
     ln1 = np.log(TPs_Analyze.Pcross_list)
-    OBimfor = np.polyfit(X(T_list), ln1, 1) 
+    OBimfor = np.polyfit(X(T_list), ln1, 1)
     logtau = np.log10(np.exp(OBimfor[1]))
     print(Mlabel+"U_{eff} of Pcross Orbach is "+'%1.1f'%OBimfor[0]+" K")
     print("log(tau_mkv) is "+'%1.2f'%logtau+" s")
     ln1 = np.log(unirate_list)
-    OBimfor = np.polyfit(X(T_list), ln1, 1) 
+    OBimfor = np.polyfit(X(T_list), ln1, 1)
     logtau = np.log10(np.exp(OBimfor[1]))
     print(Mlabel+"U_{eff} of MKV Orbach is "+'%1.1f'%OBimfor[0]+" K")
     print("log(tau_mkv) is "+'%1.2f'%logtau+" s")
@@ -2725,7 +2729,7 @@ def drwa_OB(Mlabel, AllOBRate_list,T_list,filename,color=0,If_pic=True):
     OBavg,OBstd = get_avgstd(AllOBRate_list)
     OBT_list,OBavg,OBstd=draw_std_line(Mlabel+'_Orbach',color,OBavg,OBstd,X(T_list),If_pic=If_pic)
     lnOBavg = np.log(10**OBavg)
-    OBimfor = np.polyfit(OBT_list, lnOBavg, 1) 
+    OBimfor = np.polyfit(OBT_list, lnOBavg, 1)
     logOBtau = np.log10(np.exp(OBimfor[1]))
     print(Mlabel+"U_{eff} of Orbach is "+'%1.1f'%OBimfor[0]+" K")
     print("log(tau) is "+'%1.2f'%logOBtau+" s")
@@ -2737,7 +2741,7 @@ def drwa_RM(Mlabel, AllRMRate_list,T_list,filename,color=0,If_pic=True):
     RMavg,RMstd = get_avgstd(AllRMRate_list)
     RMT_list,RMavg,RMstd=draw_std_line(Mlabel+'_Raman',color,RMavg,RMstd,X(T_list),If_pic=If_pic)
     np.savetxt(filename,np.column_stack((RMT_list,-np.real(RMavg),RMstd)))
-    
+
 
 def Refresh_TPs():
     TPs_Analyze.OBT_list = np.empty((0,),dtype = float)
@@ -2751,23 +2755,27 @@ def Refresh_TPs():
     TPs_Analyze.Pcross_list = np.empty((0,),dtype = float)
 
 
-if __name__ == "__main__":
-    """
-    parser = argparse.ArgumentParser(description=""
-        A script to analyze the CFPs extract by "Extract_CFPs.py"."")
-    parser.add_argument("--yml", dest="yml", required=True, help="The path of your .yml parameter list input files.")
-    args = parser.parse_args()
-    """
-    
-    """
-    This script uses yaml as parameter input method
-    """
-    Input_filename = "inpfile/CFPs_v1.yml"
-    """
-    reading the input_file
-    """
-    
+def main(argv=None):
+    """Command-line entry point for the relaxation analysis."""
+    parser = argparse.ArgumentParser(
+        description="Analyse CFPs and compute spin-phonon relaxation times."
+    )
+    parser.add_argument(
+        "--yml",
+        dest="yml",
+        default="examples/relaxation/CFPs_v1.yml",
+        help="YAML parameter file (default: examples/relaxation/CFPs_v1.yml)",
+    )
+    args = parser.parse_args(argv)
+    if not Path(args.yml).is_file():
+        parser.error(f"YAML input not found: {args.yml}")
+    print(f"Reading parameters from {args.yml}")
+    tau = CAL_RELAX(args.yml)
+    tau.kernel()
+    if getattr(tau, "TP", None):
+        tau.TP[0].Mod_Analyse_OB()
+    return 0
 
-    TAU = CAL_RELAX(Input_filename)
-    TAU.kernel()
-    TAU.TP[0].Mod_Analyse_OB()
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,5 +1,4 @@
-#!/home/dengyf/.conda/envs/my_env/bin/python
-#/THL6/home/jiangh/members/lisx/install_lisx/anaconda3/bin/python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 import numpy as np

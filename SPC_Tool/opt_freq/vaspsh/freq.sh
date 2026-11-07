@@ -1,4 +1,4 @@
-bin="/fs2/home/jiangh/softwares/vasp/6.2.0/vasp_std"
+bin="${VASP_BIN:-vasp_std}"
 
 module purge
 module load vasp/6.2.0
@@ -18,7 +18,7 @@ if [ "$checktext" != "" ];then
 	cd ../../
 	#mkdir tmpfile
 	cd VASP
-	mkdir freq
+	mkdir -p freq
 	cd freq
 
 	cp ../opt/CONTCAR $RTP/inpfile/opt_CONTCAR

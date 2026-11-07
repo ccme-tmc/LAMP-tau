@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Workflow outputs / intermediates
+_backup/
+perb/
+TPs/
+TPs_file/
+tmpfile/
+VASP/
+*.chk
+*.h5
+*.vp
+*.dat
+*.png
+*.pdf
+!SPC_Tool/manual/manual.pdf
+!SPC_Tool/manual.pdf
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,46 @@
+# Example input for the relaxation analysis (mag_anal).
+# System: DyAC (the data are shipped in examples/relaxation/DyAC).
+# Run from the repository root:
+#   lamp-tau --yml examples/relaxation/CFPs_v1.yml
+# or
+#   python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+
+CFPs_filename: examples/relaxation/DyAC/CFPs_py.out
+mag_filename: examples/relaxation/DyAC/eqpyout
+Ab_Type: 3                      # 0 Molcas, 1 OpenMolcas, 3 PySCF
+freq_filename: examples/relaxation/DyAC/freq.log
+POSCAR: examples/relaxation/DyAC/POSCAR
+Atom_list: examples/relaxation/DyAC/Atom_list
+TO_foldname: examples/relaxation/ESO_TTO
+
+# Outputs
+VP_filename: examples/relaxation/TPs_file/VP.log
+TPs_foldname: examples/relaxation/TPs
+Out_foldname: examples/relaxation/TPs_file
+
+# Frequency correction and CFP fitting
+Correction_slope: 1
+Corrected_intercept: 0
+Fitting_order: 1
+CFPs_X: [-0.1, -0.08, -0.06, -0.04, -0.02, 0, 0.02, 0.04, 0.06, 0.08, 0.1]
+CFPs_Type: 1                    # 1 = Cartesian (xyz) displacement CFPs
+
+# Spin-phonon perturbation
+If_Perb: True
+Perb_T: 0.01
+g_z: 19.8
+Linewidth_parameter: 10         # cm^-1
+
+# Temperature grid
+If_T_step: True
+nTrange: 1
+Trange1: 10,50,5
+
+# Plotting and relaxation channels
+If_get_picture_Tt: True
+If_Orbach: True
+If_Raman: False
+If_uniformization: False
+
+# Experimental data overlay (disabled for the shipped example)
+If_Data: False

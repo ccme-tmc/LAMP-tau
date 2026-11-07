@@ -1,15 +1,14 @@
 #!/bin/bash
 #SBATCH -o stdout
-#SBATCH --partition=TH_LONG
+#SBATCH --partition=YOUR_PARTITION
 #SBATCH -J Dyf_Dyd2
 #SBATCH --get-user-env
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=28
 #SBATCH --mail-type=end
-#SBATCH --mail-user=sunhuaiyang@pku.edu.cn
+#SBATCH --mail-user=YOUR_EMAIL
 #SBATCH --time=100:00:00
 
-#bin="/THL6/home/jiangh/program/vasp.5.4.4/bin/vasp_std"
 #module purge
 #module load openmolcas/v22.06-dyf
 export MOLCAS_MEM=50000

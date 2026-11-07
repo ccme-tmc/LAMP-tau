@@ -1,4 +1,4 @@
-bin="/fs2/home/jiangh/softwares/vasp/6.2.0/vasp_std"
+bin="${VASP_BIN:-vasp_std}"
 
 module purge
 module load vasp/6.2.0
@@ -7,10 +7,10 @@ module load vaspkit/1.4.0
 RTP=$(realpath ../../)
 OFP=$(realpath ../)
 cd ../
-mkdir tmpfile
-mkdir VASP
+mkdir -p tmpfile
+mkdir -p VASP
 cd VASP
-mkdir opt
+mkdir -p opt
 cd opt
 
 cp $RTP/inpfile/POSCAR ./

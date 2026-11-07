@@ -1,17 +1,16 @@
 #!/bin/bash
 #SBATCH -o stdout
-#SBATCH --partition=cps4
+#SBATCH --partition=YOUR_PARTITION
 #SBATCH -J Dyf_Co2
 #SBATCH --get-user-env
 ##SBATCH --nodes=1
 #SBATCH --ntasks-per-node=10
 #SBATCH --mail-type=end
-#SBATCH --mail-user=sunhuaiyang@pku.edu.cn
+#SBATCH --mail-user=YOUR_EMAIL
 #SBATCH --time=100:00:00
 
-#bin="/THL6/home/jiangh/program/vasp.5.4.4/bin/vasp_std"
 module purge
-module load AiYH_code/0607-dyf
+# module load AiYH_code/0607-dyf  # install LAMP_emb and set PYTHONPATH instead
 
 source activate pyscf
 export TMPDIR=${PWD}

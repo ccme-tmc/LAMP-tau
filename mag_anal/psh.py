@@ -1,4 +1,5 @@
 # %%
+import os
 import numpy as np
 import math
 #from scipy.sparse.linalg import eigs, eigsh
@@ -356,7 +357,7 @@ class StevOper:
         self.val = val
 
 class PSH():
-    def __init__(self, SISO,Nstate=16,lmax=12,TFO=1,TFB=0,ROT=True,Angle=None):
+    def __init__(self, SISO,Nstate=16,lmax=12,TFO=1,TFB=0,ROT=True,Angle=None,outdir='.'):
         """
         
         Args:
@@ -383,17 +384,22 @@ class PSH():
         self.TFB = TFB
         self.ROT = ROT
         self.Angle = Angle
-        np.savetxt('SOC.txt',self.SOC,fmt='%.08f')
-        np.savetxt('Lx.txt',self.ang_mom[...,0],fmt='%.08f')
-        np.savetxt('Ly.txt',self.ang_mom[...,1],fmt='%.08f')
-        np.savetxt('Lz.txt',self.ang_mom[...,2],fmt='%.08f')
-        np.savetxt('Sx.txt',self.sang_mom[...,0],fmt='%.08f')
-        np.savetxt('Sy.txt',self.sang_mom[...,1],fmt='%.08f')
-        np.savetxt('Sz.txt',self.sang_mom[...,2],fmt='%.08f')
+        self.outdir = str(outdir)
+        os.makedirs(self.outdir, exist_ok=True)
+        np.savetxt(self._out('SOC.txt'),self.SOC,fmt='%.08f')
+        np.savetxt(self._out('Lx.txt'),self.ang_mom[...,0],fmt='%.08f')
+        np.savetxt(self._out('Ly.txt'),self.ang_mom[...,1],fmt='%.08f')
+        np.savetxt(self._out('Lz.txt'),self.ang_mom[...,2],fmt='%.08f')
+        np.savetxt(self._out('Sx.txt'),self.sang_mom[...,0],fmt='%.08f')
+        np.savetxt(self._out('Sy.txt'),self.sang_mom[...,1],fmt='%.08f')
+        np.savetxt(self._out('Sz.txt'),self.sang_mom[...,2],fmt='%.08f')
+
+    def _out(self, name):
+        return os.path.join(self.outdir, name)
 
     def gen_ESO(self):
         if self.TFO==0:
-            ESO_foldname = "inpfile/ESO_es"
+            ESO_foldname = os.path.join(self.outdir, "ESO_es")
             print("ESO")
             self.ESO = read_ESO_matrix(self.Nstate,self.lmax,ESO_foldname)
         if self.TFO==1:
@@ -419,7 +425,7 @@ class PSH():
         Masoc = self.SOC
         Nstate = self.Nstate
         eigval, eigvec = np.linalg.eigh(Masoc)
-        np.savetxt('eigval.txt',eigval,fmt='%.08f')
+        np.savetxt(self._out('eigval.txt'),eigval,fmt='%.08f')
         enr2 = np.zeros([Nstate],dtype=complex)
         print(f"#################################################")
         print(f"#################################################")
@@ -440,12 +446,12 @@ class PSH():
         eig_state_Lx = eig_state_ang_mom[...,0]
         eig_state_Ly = eig_state_ang_mom[...,1]
         eig_state_Lz = eig_state_ang_mom[...,2]
-        np.savetxt('eig_Lx.txt',eig_state_ang_mom[...,0],fmt='%.08f')
-        np.savetxt('eig_Ly.txt',eig_state_ang_mom[...,1],fmt='%.08f')
-        np.savetxt('eig_Lz.txt',eig_state_ang_mom[...,2],fmt='%.08f')
-        np.savetxt('eig_Sx.txt',eig_state_sang_mom[...,0],fmt='%.08f')
-        np.savetxt('eig_Sy.txt',eig_state_sang_mom[...,1],fmt='%.08f')
-        np.savetxt('eig_Sz.txt',eig_state_sang_mom[...,2],fmt='%.08f')
+        np.savetxt(self._out('eig_Lx.txt'),eig_state_ang_mom[...,0],fmt='%.08f')
+        np.savetxt(self._out('eig_Ly.txt'),eig_state_ang_mom[...,1],fmt='%.08f')
+        np.savetxt(self._out('eig_Lz.txt'),eig_state_ang_mom[...,2],fmt='%.08f')
+        np.savetxt(self._out('eig_Sx.txt'),eig_state_sang_mom[...,0],fmt='%.08f')
+        np.savetxt(self._out('eig_Sy.txt'),eig_state_sang_mom[...,1],fmt='%.08f')
+        np.savetxt(self._out('eig_Sz.txt'),eig_state_sang_mom[...,2],fmt='%.08f')
         tteig_state_Jz = eig_state_Sz*0.5 + eig_state_Lz
         tteig_state_Jx = eig_state_Sx*0.5 + eig_state_Lx
         tteig_mux = eig_state_Sx + eig_state_Lx
@@ -504,7 +510,7 @@ class PSH():
         Masoc = self.SOC
         Nstate = self.Nstate
         eigval, eigvec = np.linalg.eigh(Masoc)
-        np.savetxt('eigval.txt',eigval,fmt='%.08f')
+        np.savetxt(self._out('eigval.txt'),eigval,fmt='%.08f')
         enr2 = np.zeros([Nstate],dtype=complex)
         print(f"#################################################")
         print(f"#################################################")
@@ -525,12 +531,12 @@ class PSH():
         eig_state_Lx = eig_state_ang_mom[...,0]
         eig_state_Ly = eig_state_ang_mom[...,1]
         eig_state_Lz = eig_state_ang_mom[...,2]
-        np.savetxt('eig_Lx.txt',eig_state_ang_mom[...,0],fmt='%.08f')
-        np.savetxt('eig_Ly.txt',eig_state_ang_mom[...,1],fmt='%.08f')
-        np.savetxt('eig_Lz.txt',eig_state_ang_mom[...,2],fmt='%.08f')
-        np.savetxt('eig_Sx.txt',eig_state_sang_mom[...,0],fmt='%.08f')
-        np.savetxt('eig_Sy.txt',eig_state_sang_mom[...,1],fmt='%.08f')
-        np.savetxt('eig_Sz.txt',eig_state_sang_mom[...,2],fmt='%.08f')
+        np.savetxt(self._out('eig_Lx.txt'),eig_state_ang_mom[...,0],fmt='%.08f')
+        np.savetxt(self._out('eig_Ly.txt'),eig_state_ang_mom[...,1],fmt='%.08f')
+        np.savetxt(self._out('eig_Lz.txt'),eig_state_ang_mom[...,2],fmt='%.08f')
+        np.savetxt(self._out('eig_Sx.txt'),eig_state_sang_mom[...,0],fmt='%.08f')
+        np.savetxt(self._out('eig_Sy.txt'),eig_state_sang_mom[...,1],fmt='%.08f')
+        np.savetxt(self._out('eig_Sz.txt'),eig_state_sang_mom[...,2],fmt='%.08f')
         tteig_state_Jz = eig_state_Sz*0.5 + eig_state_Lz
         tteig_state_Jy = eig_state_Sy*0.5 + eig_state_Ly
         tteig_state_Jx = eig_state_Sx*0.5 + eig_state_Lx

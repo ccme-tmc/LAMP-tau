@@ -1,4 +1,4 @@
-#!/home/dengyf/.conda/envs/my_env/bin/python
+#!/usr/bin/env python3
 #/usr/bin/python3
 # -*- coding:utf-8 -*-
 
