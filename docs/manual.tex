@@ -1,0 +1,1121 @@
+% LAMP-tau User Manual -- LaTeX edition.
+% Build with: xelatex manual.tex (twice, for the table of contents)
+% The English edition is generated from docs/manual.md; the Markdown
+% edition also contains a Chinese summary.
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{textcomp}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  backgroundcolor=\color{gray!8},
+  showstringspaces=false,
+  extendedchars=true
+}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\texorpdfstring}[2]{#1}
+\providecommand{\linethickness}{0.4pt}
+
+\title{LAMP-tau User Manual}
+\author{LAMP-tau contributors}
+\date{Version 1.0.0}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\begin{quote}
+\textbf{Abstract.} This manual covers installation, a runnable DyAC example, the full spin-phonon-coupling workflow, the YAML and file formats, output files, the Python API, HPC notes and troubleshooting. The Markdown edition in \texttt{docs/manual.md} retains a Chinese summary.
+\end{quote}
+
+Version 1.0.0 --- accompanying the manuscript \emph{Accelerating ab
+initio spin-phonon relaxation simulation of single-ion magnets by
+quantum embedding and spatial truncation} (J. Chem. Phys., 2026).
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Overview}\label{overview}
+
+LAMP-tau is a Python toolkit for \emph{ab initio} spin-phonon relaxation
+simulation of single-ion magnets (SIMs). It has two parts:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{\texttt{mag\_anal}} --- analysis of electronic-structure
+  results: crystal-field parameters (CFPs), effective spin Hamiltonian,
+  \emph{g} tensors, spin-phonon coupling (SPC) matrix elements and
+  relaxation times \(\tau\)(T).
+\item
+  \textbf{\texttt{SPC\_Tool}} --- scripts that prepare and organise the
+  underlying calculations: VASP phonons, displaced structures,
+  DMET+CASSCF-SO (PySCF) or CASSCF (OpenMolcas) inputs, and CFP
+  extraction.
+\end{itemize}
+
+The electronic-structure workflow is
+
+\begin{lstlisting}
+VASP phonons ----> displaced structures ----> DMET+CASSCF-SO / CASSCF ----> CFPs
+                                                                      |
+                                                     SPC parameters <---+
+                                                            |
+                                                            ▼
+                                                         tau(T), Ueff, tau0
+\end{lstlisting}
+
+\texttt{mag\_anal} is the part used in step 4--5; \texttt{SPC\_Tool}
+covers steps 1--3.
+
+\subsection{Requirements at a
+glance}\label{requirements-at-a-glance}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Item\strut
+ & Requirement\strut
+\tabularnewline
+\midrule
+\endhead
+Python\strut
+ & \(\geq\) 3.10 (the code uses \texttt{match}/\texttt{case})\strut
+\tabularnewline
+Core Python packages\strut
+ & NumPy, SciPy, PyYAML, prettytable, Matplotlib, ASE, SymPy\strut
+\tabularnewline
+DMET+CASSCF-SO\strut
+ & PySCF, \texttt{basis\_set\_exchange},
+\texttt{LAMP-emb} (\texttt{https://github.com/ZGuan97/LAMP\_emb})
+(\texttt{embed\_sim})\strut
+\tabularnewline
+Phonons\strut
+ & VASP (periodic) or a molecular Hessian (e.g.~ORCA)\strut
+\tabularnewline
+Alternative electronic structure\strut
+ & OpenMolcas (for the Molcas path)\strut
+\tabularnewline
+Scheduler\strut
+ & Slurm, PBS or Tianhe; the shipped \texttt{.sh} files are templates\strut
+\tabularnewline
+\bottomrule
+\end{longtable}
+
+VASP, OpenMolcas and ORCA are external programs and are \textbf{not}
+distributed with LAMP-tau.
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Installation}\label{installation}
+
+\subsection{From a clone}\label{from-a-clone}
+
+\begin{lstlisting}
+git clone https://github.com/Dengyf98/LAMP_tau.git
+cd LAMP_tau
+python -m pip install -e .
+\end{lstlisting}
+
+This installs the \texttt{mag\_anal} package and the \texttt{lamp-tau}
+command. If you only need the analysis part:
+
+\begin{lstlisting}
+python -m pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{LAMP-emb and PySCF}\label{lamp-emb-and-pyscf}
+
+The DMET part uses the \texttt{embed\_sim} package from LAMP-emb:
+
+\begin{lstlisting}
+git clone https://github.com/ZGuan97/LAMP_emb.git
+export PYTHONPATH=/path/to/LAMP_emb:$PYTHONPATH
+python -m pip install pyscf basis_set_exchange
+\end{lstlisting}
+
+\texttt{dmet\_tmp.py.tmpl} imports \texttt{embed\_sim.myavas},
+\texttt{ssdmet}, \texttt{siso}, \texttt{sacasscf\_mixer} and
+\texttt{rdiis}.
+
+\subsection{Check the installation}\label{check-the-installation}
+
+\begin{lstlisting}
+lamp-tau --help
+python -c "import mag_anal; print(mag_anal.__version__)"
+\end{lstlisting}
+
+On a headless machine set:
+
+\begin{lstlisting}
+export MPLBACKEND=Agg
+\end{lstlisting}
+
+\subsection{Optional development
+tools}\label{optional-development-tools}
+
+\begin{lstlisting}
+python -m pip install -e ".[dev]"   # pytest, ruff
+python -m pytest tests -q
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Repository layout}\label{repository-layout}
+
+\begin{lstlisting}
+LAMP_tau/
+|-- mag_anal/
+|   |-- Anal_Tau.py          # tau(T) analysis; CLI entry point
+|   |-- psh.py               # pseudospin Hamiltonian, g tensors, CFP projection
+|   |-- gen_structures.py    # displaced structures from phonon modes
+|   |-- Select_group.py      # molecular-group selection / spatial truncation
+|   |-- dictionary.py        # element/mass dictionaries
+|-- SPC_Tool/
+|   |-- inpfile/             # input templates (VASP, PySCF, OpenMolcas)
+|   |-- opt_freq/vaspsh/     # VASP geometry optimisation and frequencies
+|   |-- Per_B_kp/Pyscfsh/    # displaced structures, inputs, CFP extraction
+|   |-- sh/                  # scheduler templates
+|   |-- Relaxation/          # legacy example configuration
+|   |-- manual/              # Chinese manual (LaTeX + PDF)
+|-- examples/relaxation/     # runnable DyAC example
+|-- docs/                    # workflow, formats, HPC and data notes
+|-- tests/                   # smoke test
+|-- pyproject.toml
+|-- requirements.txt
+|-- CITATION.cff
+|-- LICENSE
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Quick start: relaxation analysis
+(DyAC)}\label{quick-start-relaxation-analysis-dyac}
+
+The shipped example uses DyAC and runs from the repository root.
+
+\begin{lstlisting}
+lamp-tau --yml examples/relaxation/CFPs_v1.yml
+\end{lstlisting}
+
+or, without installing:
+
+\begin{lstlisting}
+python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+\end{lstlisting}
+
+What happens:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \texttt{Read\_input} parses the YAML file and creates
+  \texttt{Out\_foldname}.
+\item
+  \texttt{Read\_freq} reads \texttt{freq.log}/\texttt{POSCAR} and builds
+  the phonon modes.
+\item
+  \texttt{Read\_CFPs} reads \texttt{CFPs\_py.out} and fits ∂Bkq/∂Q.
+\item
+  \texttt{Read\_Static\_effH} reads the equilibrium output
+  (\texttt{eqpyout}) and the tensor-operator matrices.
+\item
+  \texttt{Analyse\_Relax} computes the spin-phonon matrix, transition
+  probabilities and \(\tau\)(T).
+\end{enumerate}
+
+Expected console tail:
+
+\begin{lstlisting}
+TestU_{eff} of Orbach is 190.1 K
+log(tau) is -11.30 s
+rate-determing step
+\end{lstlisting}
+
+Outputs (in \texttt{examples/relaxation/TPs\_file/} by default):
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+File & Content\tabularnewline
+\midrule
+\endhead
+\texttt{OB\_v1.dat} & \texttt{1/T}, \texttt{-log10(\(\tau\)/s)}, standard
+deviation\tabularnewline
+\texttt{TPs1.png} & \texttt{log10(\(\tau\)/s)} vs \texttt{1/T}
+(Orbach)\tabularnewline
+\texttt{TPs2.png} & comparison figure\tabularnewline
+\texttt{VP.log} & spin-phonon matrix elements\tabularnewline
+\texttt{TPs/*.tps}, \texttt{TPs/*.tp} & cached transition matrices per
+temperature\tabularnewline
+\bottomrule
+\end{longtable}
+
+The full example takes a few minutes on a laptop. For a faster check,
+reduce \texttt{Trange1} to two temperatures.
+
+\subsection{Programmatic use}\label{programmatic-use}
+
+\begin{lstlisting}
+from mag_anal.Anal_Tau import CAL_RELAX
+
+tau = CAL_RELAX("examples/relaxation/CFPs_v1.yml")
+tau.kernel()
+
+# Orbach rate-determining analysis for the first temperature
+tau.TP[0].Mod_Analyse_OB()
+\end{lstlisting}
+
+\texttt{tau.TP} is a list of \texttt{TPs\_Analyze} objects, one per
+temperature.
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Full SPC workflow}\label{full-spc-workflow}
+
+\subsection{Step 1 --- geometry optimisation and
+phonons}\label{step-1-geometry-optimisation-and-phonons}
+
+Prepare in \texttt{SPC\_Tool/inpfile/}:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{POSCAR} (or a \texttt{.cif} for \texttt{gen\_POSCAR.py});
+\item
+  \texttt{opt\_INCAR}, \texttt{freq\_INCAR};
+\item
+  \texttt{job\_vasp.sh} adapted to your cluster.
+\end{itemize}
+
+Run, in \texttt{SPC\_Tool/opt\_freq/vaspsh/}:
+
+\begin{lstlisting}
+bash POSCAR.sh     # optional: build POSCAR from a structure
+bash opt.sh        # VASP geometry optimisation
+bash freq.sh       # VASP frequencies; calls Select_group.py
+\end{lstlisting}
+
+\texttt{freq.sh} checks that the optimisation reached
+\texttt{reached\ required\ accuracy}, then creates \texttt{VASP/freq/},
+runs \texttt{Select\_group.py} and copies \texttt{freq\_POSCAR},
+\texttt{eq\_opt.xyz}, \texttt{dpxs} and \texttt{Atom\_list} into
+\texttt{inpfile/}.
+
+\texttt{Select\_group.py} options:
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Option & Meaning\tabularnewline
+\midrule
+\endhead
+\texttt{-\/-cry} & crystal structure file\tabularnewline
+\texttt{-\/-ct} & centre element (e.g. \texttt{Dy})\tabularnewline
+\texttt{-\/-num} & centre atom index (optional)\tabularnewline
+\texttt{-\/-out} & output folder\tabularnewline
+\texttt{-f}, \texttt{-\/-freq} & also write a
+\texttt{Selective\ dynamics} \texttt{freq\_POSCAR}\tabularnewline
+\bottomrule
+\end{longtable}
+
+\subsection{Step 2 --- displaced
+structures}\label{step-2-displaced-structures}
+
+In \texttt{SPC\_Tool/Per\_B\_kp/Pyscfsh/}:
+
+\begin{lstlisting}
+bash run1_stru.sh
+bash run2_Regr.sh   # only for the periodic-cell path
+\end{lstlisting}
+
+\texttt{run1\_stru.sh} calls either:
+
+\begin{lstlisting}
+python3 gen_structures_xyz.py --pos ../../inpfile/eq_opt.xyz -np 10 -mdp 0.02
+# or
+python3 gen_structures_cell.py --out ../../inpfile/freq.log --pos ../../inpfile/opt_CONTCAR -np 10 -mdp 0.2
+\end{lstlisting}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Script & Options\tabularnewline
+\midrule
+\endhead
+\texttt{gen\_structures\_xyz.py} & \texttt{-\/-pos},
+\texttt{-np/-\/-npts}, \texttt{-mdp/-\/-maxdp}\tabularnewline
+\texttt{gen\_structures\_cell.py} & \texttt{-\/-out} (VASP frequency
+file), \texttt{-\/-pos}, \texttt{-np}, \texttt{-mdp},
+\texttt{-v}\tabularnewline
+\texttt{Replace\_group.py} & \texttt{-i/-\/-inp}, \texttt{-o/-\/-out},
+\texttt{-\/-inpfile}\tabularnewline
+\bottomrule
+\end{longtable}
+
+\texttt{gen\_structures\_*} writes
+\texttt{perb/\textless{}mode\textgreater{}/\textless{}point\textgreater{}/mol\_\textless{}mode\textgreater{}\_\textless{}point\textgreater{}.xyz}.
+\texttt{Replace\_group.py} extracts the molecular group from the
+periodic cell using \texttt{inpfile/Atom\_list} and
+\texttt{inpfile/dpxs}.
+
+\subsection{Step 3 --- electronic-structure
+inputs}\label{step-3-electronic-structure-inputs}
+
+\begin{lstlisting}
+bash run3_inp.sh
+\end{lstlisting}
+
+\texttt{run3\_inp.sh} fills the template for the equilibrium structure
+and every displacement:
+
+\begin{lstlisting}
+python insert_xyz.py --tmp ../../inpfile/dmet_tmp.py.tmpl \
+    --xyz mol_<mode>_<point>.xyz -o dmet_cassiso.py -c <charge> -t <title>
+\end{lstlisting}
+
+\texttt{insert\_xyz.py} options:
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Option & Meaning\tabularnewline
+\midrule
+\endhead
+\texttt{-\/-tmp} & template file (\texttt{.tmpl})\tabularnewline
+\texttt{-\/-xyz} & structure file\tabularnewline
+\texttt{-o/-\/-out} & output Python input\tabularnewline
+\texttt{-c/-\/-charge} & total charge\tabularnewline
+\texttt{-t/-\/-title} & job title\tabularnewline
+\bottomrule
+\end{longtable}
+
+The resulting \texttt{dmet\_cassiso.py} still needs a \textbf{complete
+basis block}. The template contains Dy/C/H entries as an example; add
+every element present in your system.
+
+For OpenMolcas, use \texttt{SPC\_Tool/inpfile/molcas\_cas.in} and the
+Molcas job templates instead.
+
+\subsection{Step 4 --- run the electronic-structure
+jobs}\label{step-4-run-the-electronic-structure-jobs}
+
+The generated layout is:
+
+\begin{lstlisting}
+perb/
+|-- eq/
+|   |-- dmet_cassiso.py
+|   |-- jobeq.sh
+|-- <mode>/<point>/
+    |-- dmet_cassiso.py
+    |-- pyjob.sh
+\end{lstlisting}
+
+Submit \texttt{jobeq.sh} first, then the displaced jobs.
+\texttt{SPC\_Tool/sh/} contains templates:
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Script & Purpose\tabularnewline
+\midrule
+\endhead
+\texttt{job\_pyscf.sh} & one displaced PySCF job\tabularnewline
+\texttt{jobeq\_pyscf.sh} & equilibrium PySCF job\tabularnewline
+\texttt{job\_molcas.sh}, \texttt{jobeq\_molcas.sh} & OpenMolcas
+equivalents\tabularnewline
+\texttt{check\_pyscf.sh}, \texttt{check\_molcas.sh} & check completion
+and trim output\tabularnewline
+\texttt{clean\_pyscf.sh} & remove checkpoint files\tabularnewline
+\texttt{yhjob\_pyscf.sh}, \texttt{yhjob\_molcas.sh} & batch
+submission\tabularnewline
+\bottomrule
+\end{longtable}
+
+These files are \textbf{templates}; edit partition/queue, e-mail,
+modules and \texttt{VASP\_BIN}. See \S10.
+
+\subsection{Step 5 --- extract CFPs}\label{step-5-extract-cfps}
+
+\begin{lstlisting}
+bash run4_CFPs.sh
+\end{lstlisting}
+
+which is equivalent to:
+
+\begin{lstlisting}
+python3 Extract_CFPs.py -el perb/eq/pyout -nd 201 -np 10
+\end{lstlisting}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Option & Meaning\tabularnewline
+\midrule
+\endhead
+\texttt{-el/-\/-eqlog} & equilibrium magnetic output\tabularnewline
+\texttt{-nd/-\/-nmds} & number of vibrational modes\tabularnewline
+\texttt{-np/-\/-npts} & number of displacement points\tabularnewline
+\texttt{-\/-prefix} & directory containing \texttt{perb} (default
+\texttt{perb})\tabularnewline
+\texttt{-\/-stdout} & per-point output name (default
+\texttt{stdout1})\tabularnewline
+\texttt{-\/-out} & output CFP file (default
+\texttt{CFPs.out})\tabularnewline
+\texttt{-v} & verbose\tabularnewline
+\bottomrule
+\end{longtable}
+
+The result \texttt{CFPs.out} is the \texttt{CFPs\_filename} consumed by
+\texttt{mag\_anal}.
+
+\subsection{Step 6 --- relaxation
+time}\label{step-6-relaxation-time}
+
+Create a YAML file pointing to \texttt{CFPs.out}, the equilibrium
+output, \texttt{freq.log}, \texttt{POSCAR}, \texttt{Atom\_list} and the
+tensor-operator folder, then run:
+
+\begin{lstlisting}
+lamp-tau --yml my_system.yml
+\end{lstlisting}
+
+See \S6 for all keys and \S8 for outputs.
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{YAML reference}\label{yaml-reference}
+
+A complete example is \texttt{examples/relaxation/CFPs\_v1.yml}.
+
+\subsection{Required keys}\label{required-keys}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.26\linewidth} >{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.58\linewidth}@{}}
+\toprule
+Key\strut
+ & Type\strut
+ & Meaning\strut
+\tabularnewline
+\midrule
+\endhead
+\texttt{CFPs\_filename}\strut
+ & path\strut
+ & \texttt{CFPs.out} from \texttt{Extract\_CFPs.py}\strut
+\tabularnewline
+\texttt{mag\_filename}\strut
+ & path\strut
+ & equilibrium electronic-structure output\strut
+\tabularnewline
+\texttt{Ab\_Type}\strut
+ & int\strut
+ & \texttt{0} Molcas, \texttt{1} OpenMolcas, \texttt{3} PySCF\strut
+\tabularnewline
+\texttt{freq\_filename}\strut
+ & path\strut
+ & VASP frequency output\strut
+\tabularnewline
+\texttt{POSCAR}\strut
+ & path\strut
+ & equilibrium structure\strut
+\tabularnewline
+\texttt{TO\_foldname}\strut
+ & path\strut
+ & tensor-operator folder\strut
+\tabularnewline
+\texttt{VP\_filename}\strut
+ & path\strut
+ & spin-phonon matrix output/prefix\strut
+\tabularnewline
+\texttt{TPs\_foldname}\strut
+ & path\strut
+ & cache folder for transition matrices\strut
+\tabularnewline
+\texttt{Out\_foldname}\strut
+ & path\strut
+ & folder for \(\tau\)(T) outputs\strut
+\tabularnewline
+\texttt{CFPs\_X}\strut
+ & list\strut
+ & displacement grid; must contain \texttt{0}\strut
+\tabularnewline
+\texttt{Correction\_slope}, \texttt{Corrected\_intercept}\strut
+ & float\strut
+ & frequency correction \texttt{\(\nu\)\ →\ a·\(\nu\)\ +\ b}\strut
+\tabularnewline
+\texttt{Fitting\_order}\strut
+ & int\strut
+ & polynomial order of the CFP fit\strut
+\tabularnewline
+\texttt{Linewidth\_parameter}\strut
+ & float\strut
+ & broadening (cm⁻¹)\strut
+\tabularnewline
+\texttt{If\_Data}\strut
+ & bool\strut
+ & overlay experimental \(\tau\)(T)\strut
+\tabularnewline
+\texttt{If\_Perb}\strut
+ & bool\strut
+ & apply the perturbation treatment\strut
+\tabularnewline
+\texttt{Perb\_T}\strut
+ & float\strut
+ & perturbation field (T)\strut
+\tabularnewline
+\texttt{g\_z}\strut
+ & float\strut
+ & ground-state \texttt{g\_z}\strut
+\tabularnewline
+\texttt{If\_uniformization}\strut
+ & bool\strut
+ & use the uniformization method\strut
+\tabularnewline
+\texttt{CFPs\_Type}\strut
+ & int\strut
+ & see \S6.2\strut
+\tabularnewline
+\texttt{If\_get\_picture\_Tt}\strut
+ & bool\strut
+ & write \(\tau\)(T) figures\strut
+\tabularnewline
+\texttt{If\_Orbach}, \texttt{If\_Raman}\strut
+ & bool\strut
+ & enable relaxation channels\strut
+\tabularnewline
+\bottomrule
+\end{longtable}
+
+\subsection{\texorpdfstring{\texttt{CFPs\_Type}}{6.2 CFPs\_Type}}\label{cfps_type}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.26\linewidth} >{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.58\linewidth}@{}}
+\toprule
+Value & Meaning & Extra keys\tabularnewline
+\midrule
+\endhead
+\texttt{0} & normal-mode CFPs & none\tabularnewline
+\texttt{1} & Cartesian (xyz) CFPs & \texttt{Atom\_list}\tabularnewline
+\texttt{2} & xyz + spatial reduction & \texttt{Molfile}, plus
+\texttt{Atom\_radius} \textbf{or} \texttt{Atom\_label}\tabularnewline
+\texttt{3} & Lorentz random CFPs & \texttt{llzA},
+\texttt{llzw}\tabularnewline
+\bottomrule
+\end{longtable}
+
+For \texttt{CFPs\_Type=1} and \texttt{2}, \texttt{Atom\_list} points to
+the atom indices retained by the spatial-truncation selection. The
+default is \texttt{inpfile/Atom\_list}; specify it explicitly for
+portable examples.
+
+\subsection{Optional keys}\label{optional-keys}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Key\strut
+ & Meaning\strut
+\tabularnewline
+\midrule
+\endhead
+\texttt{Atom\_list}\strut
+ & atom indices for the mode projection (default
+\texttt{inpfile/Atom\_list})\strut
+\tabularnewline
+\texttt{First\_list}\strut
+ & first-shell indices for \texttt{CFPs\_Type=2}\strut
+\tabularnewline
+\texttt{Molfile}, \texttt{ct\_idx}, \texttt{Atom\_radius},
+\texttt{Atom\_label}\strut
+ & spatial-reduction options\strut
+\tabularnewline
+\texttt{llzA}, \texttt{llzw}\strut
+ & Lorentz random-CFP parameters\strut
+\tabularnewline
+\texttt{If\_select\_sigma}, \texttt{select\_sigma}\strut
+ & restrict modes to a frequency window (cm⁻¹)\strut
+\tabularnewline
+\texttt{If\_T\_step}, \texttt{nTrange}, \texttt{Trange1..n}\strut
+ & temperature grid\strut
+\tabularnewline
+\texttt{ndata}, \texttt{Tr1..}, \texttt{logtime1..},
+\texttt{label1..}\strut
+ & experimental data overlay\strut
+\tabularnewline
+\bottomrule
+\end{longtable}
+
+\subsection{Temperature grid}\label{temperature-grid}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{If\_T\_step:\ True}: each \texttt{TrangeN} is
+  \texttt{min,max,step}.
+\item
+  \texttt{If\_T\_step:\ False}: each \texttt{TrangeN} is
+  \texttt{min,max,count}.
+\end{itemize}
+
+Example:
+
+\begin{lstlisting}
+If_T_step: True
+nTrange: 1
+Trange1: 10,50,5      # 10, 15, ..., 50 K
+\end{lstlisting}
+
+\subsection{Experimental overlay}\label{experimental-overlay}
+
+With \texttt{If\_Data:\ True}, provide:
+
+\begin{lstlisting}
+ndata: 1
+Tr1: [ ... ]          # 1/T
+logtime1: [ ... ]     # log10(tau/s)
+label1: Exp
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{File formats}\label{file-formats}
+
+\subsection{\texorpdfstring{\texttt{CFPs.out}}{7.1 CFPs.out}}\label{cfps.out}
+
+\begin{lstlisting}
+The Perturbation CFPs
+<blank line>
+Total modes 201
+Total points 10
+Mode 1 Point 1
+<5 numbers>
+<9 numbers>
+<13 numbers>
+...
+\end{lstlisting}
+
+The blank line is optional in recent versions (the reader searches for
+\texttt{Total\ modes}/\texttt{Total\ points}), but
+\texttt{Extract\_CFPs.py} writes it.
+
+\subsection{\texorpdfstring{\texttt{freq.log}}{7.2 freq.log}}\label{freq.log}
+
+VASP frequency output with blocks:
+
+\begin{lstlisting}
+   1 f  =  102.701176 THz ... 3425.742380 cm-1 ...
+             X         Y         Z           dx          dy          dz
+      ...
+\end{lstlisting}
+
+The mode order must match \texttt{CFPs.out}.
+
+\subsection{\texorpdfstring{\texttt{eqpyout}}{7.3 eqpyout}}\label{eqpyout}
+
+PySCF output containing the
+\texttt{Rotated\ Crystal\ Field\ Parameters:} table and spin-orbit
+eigenstates. For Molcas/OpenMolcas use \texttt{Ab\_Type=0/1}.
+
+\subsection{\texorpdfstring{\texttt{.eso}}{7.4 .eso}}\label{eso}
+
+\texttt{TO\_foldname} contains
+\texttt{\textless{}Nstate\textgreater{}\_real.eso} and
+\texttt{\textless{}Nstate\textgreater{}\_imag.eso}:
+
+\begin{lstlisting}
+k = 2,q = -2
+<16 x 16 real numbers>
+...
+\end{lstlisting}
+
+The shipped \texttt{examples/relaxation/ESO\_TTO/} files are for 16
+states (Dy³⁺).
+
+\subsection{Templates}\label{templates}
+
+\texttt{SPC\_Tool/inpfile/*.tmpl} are \textbf{not runnable}. They
+contain three placeholder lines:
+
+\begin{lstlisting}
+Molecular_Name
+Molecular_Charge
+Calculate_Title
+\end{lstlisting}
+
+\texttt{insert\_xyz.py} replaces these lines. Complete the basis block
+before running.
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Output files}\label{output-files}
+
+\subsection{\texorpdfstring{\texttt{Out\_foldname}}{8.1 Out\_foldname}}\label{out_foldname}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+File\strut
+ & Content\strut
+\tabularnewline
+\midrule
+\endhead
+\texttt{OB\_v1.dat}\strut
+ & columns \texttt{1/T}, \texttt{-log10(\(\tau\)/s)}, standard deviation\strut
+\tabularnewline
+\texttt{RM\_v1.dat}\strut
+ & same for the Raman channel\strut
+\tabularnewline
+\texttt{TPs1.png}\strut
+ & \texttt{log10(\(\tau\)/s)} vs \texttt{1/T}\strut
+\tabularnewline
+\texttt{TPs2.png}\strut
+ & comparison figure\strut
+\tabularnewline
+\texttt{uniform.dat}\strut
+ & uniformization results (\texttt{1/T}, \texttt{-log10(rate)} for three
+estimates)\strut
+\tabularnewline
+\texttt{OBTrans.eps}, \texttt{RMTrans.eps}, \texttt{RMPie.eps}\strut
+ & mode-resolved analysis (after
+\texttt{Mod\_Analyse\_OB}/\texttt{RM})\strut
+\tabularnewline
+\bottomrule
+\end{longtable}
+
+The Y-axis of \texttt{TPs1.png} is \texttt{log10(\(\tau\)/s)}; column 2 of
+\texttt{OB\_v1.dat} is its negative (\texttt{-log10(\(\tau\)/s)}). Negate
+column 2 to recover the plotted quantity.
+
+\subsection{\texorpdfstring{\texttt{TPs\_foldname}}{8.2 TPs\_foldname}}\label{tps_foldname}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+File & Content\tabularnewline
+\midrule
+\endhead
+\texttt{OB\textless{}T\textgreater{}.tps} & Orbach transition matrix at
+\texttt{T} K (text)\tabularnewline
+\texttt{OB\textless{}T\textgreater{}.tp} & summed Orbach
+matrix\tabularnewline
+\texttt{LM\textless{}T\textgreater{}.tps} & Raman transition
+matrix\tabularnewline
+\texttt{LM\textless{}T\textgreater{}.tp} & summed Raman
+matrix\tabularnewline
+\bottomrule
+\end{longtable}
+
+If a cached file exists, it is read instead of recomputed. Delete it to
+force recalculation. The
+\texttt{If\_select\_sigma}/\texttt{select\_sigma} header is checked by
+\texttt{check\_select\_sigma}.
+
+\subsection{\texorpdfstring{\texttt{VP\_filename}}{8.3 VP\_filename}}\label{vp_filename}
+
+The spin-phonon matrix. A \texttt{.dat} file is written first and
+renamed on completion; an interrupted run leaves \texttt{*.dat} and can
+be removed safely.
+
+\subsection{\texorpdfstring{\texttt{psh.py}}{8.4 psh.py}}\label{psh.py}
+
+\texttt{PSH} writes \texttt{SOC.txt}, \texttt{Lx/Ly/Lz.txt},
+\texttt{Sx/Sy/Sz.txt}, \texttt{eigval.txt} and \texttt{eig\_*.txt} to
+\texttt{outdir} (default: current directory).
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Python API}\label{python-api}
+
+\subsection{\texorpdfstring{\texttt{CAL\_RELAX}}{9.1 CAL\_RELAX}}\label{cal_relax}
+
+\begin{lstlisting}
+from mag_anal.Anal_Tau import CAL_RELAX
+
+tau = CAL_RELAX("my_system.yml")
+tau.kernel()
+\end{lstlisting}
+
+\texttt{kernel()} calls \texttt{Read\_input}, \texttt{Read\_freq},
+\texttt{Read\_CFPs}, \texttt{Read\_Static\_effH},
+\texttt{Analyse\_Relax}.
+
+Useful attributes after \texttt{kernel()}:
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Attribute & Meaning\tabularnewline
+\midrule
+\endhead
+\texttt{tau.T\_list} & temperature grid\tabularnewline
+\texttt{tau.TP} & list of \texttt{TPs\_Analyze} (one per
+T)\tabularnewline
+\texttt{tau.CFPs} & \texttt{CFPs\_Analyze} object\tabularnewline
+\texttt{tau.Eigen} & \texttt{Eigenstates} object\tabularnewline
+\texttt{tau.Out\_foldname} & output folder\tabularnewline
+\bottomrule
+\end{longtable}
+
+\subsection{\texorpdfstring{\texttt{CFPs\_Analyze}}{9.2 CFPs\_Analyze}}\label{cfps_analyze}
+
+\begin{lstlisting}
+from mag_anal.Anal_Tau import CFPs_Analyze
+
+cfps = CFPs_Analyze("CFPs.out", CFPs_X, atom_list="Atom_list")
+cfps.propare_CFPs(mol, CFPs_Type=1, order=1)
+\end{lstlisting}
+
+Methods: \texttt{read\_CFPs}, \texttt{read\_CFPs\_xyz},
+\texttt{read\_gtensors}, \texttt{propare\_CFPs}, \texttt{gen\_slope},
+\texttt{gen\_slope\_xyz}, \texttt{gen\_slope\_reduced},
+\texttt{transB\_sl}, \texttt{transB\_sl\_select}, \texttt{write\_CFPs}.
+
+\subsection{\texorpdfstring{\texttt{Eigenstates}}{9.3 Eigenstates}}\label{eigenstates}
+
+Reads energies/wavefunctions from PySCF (\texttt{read\_energies\_Pyscf},
+\texttt{read\_wavefunction\_Pyscf}), Molcas (\texttt{\_M}) or OpenMolcas
+(\texttt{\_OM}), builds the tensor-operator matrices and the spin-phonon
+matrix.
+
+\subsection{\texorpdfstring{\texttt{TPs\_Analyze}}{9.4 TPs\_Analyze}}\label{tps_analyze}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Method & Purpose\tabularnewline
+\midrule
+\endhead
+\texttt{read\_OBTPs}, \texttt{read\_RMTPs} & read cached
+matrices\tabularnewline
+\texttt{sum\_OBRMTPs} & sum channels\tabularnewline
+\texttt{Mod\_Analyse\_OB}, \texttt{Mod\_Analyse\_RM} &
+rate-determining-step analysis\tabularnewline
+\texttt{save\_TP}, \texttt{save\_TPP} & write matrices\tabularnewline
+\bottomrule
+\end{longtable}
+
+\subsection{\texorpdfstring{\texttt{PSH} (pseudospin
+Hamiltonian)}{9.5 PSH (pseudospin Hamiltonian)}}\label{psh-pseudospin-hamiltonian}
+
+\begin{lstlisting}
+from mag_anal.psh import PSH
+
+psh = PSH(mysiso, Nstate=16, lmax=12, TFO=1, TFB=0, ROT=True, outdir="psh_out")
+psh.kernel()
+\end{lstlisting}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Argument & Meaning\tabularnewline
+\midrule
+\endhead
+\texttt{SISO} & \texttt{embed\_sim.siso.SISO} object\tabularnewline
+\texttt{Nstate} & number of \texttt{\textbar{}J\ M\textgreater{}}
+states\tabularnewline
+\texttt{lmax} & maximum tensor rank\tabularnewline
+\texttt{TFO} & \texttt{0} EasySpin ESO, \texttt{1} tesseral tensor
+operators (Molforge style)\tabularnewline
+\texttt{TFB} & \texttt{0} least squares, \texttt{1}
+projection\tabularnewline
+\texttt{ROT} & rotate CFPs to the easy axis\tabularnewline
+\texttt{Angle} & explicit ZYZ Euler angles; \texttt{None} uses the easy
+axis\tabularnewline
+\texttt{outdir} & directory for diagnostic text files\tabularnewline
+\bottomrule
+\end{longtable}
+
+\texttt{psh.kernel()} runs \texttt{gen\_ESO}, \texttt{get\_E\_J},
+\texttt{get\_g\_tensor} and \texttt{get\_Bkq}/\texttt{get\_rot\_Bkq}.
+
+\subsection{\texorpdfstring{\texttt{gen\_structures} /
+\texttt{Select\_group}}{9.6 gen\_structures / Select\_group}}\label{gen_structures-select_group}
+
+\begin{lstlisting}
+from mag_anal.gen_structures import mol_freq
+from mag_anal.Select_group import choose_group
+\end{lstlisting}
+
+\texttt{mol\_freq(outfile,\ posfile)} reads VASP phonons;
+\texttt{choose\_group(cryfile,\ center,\ outfold,\ r1,\ r2)} selects a
+molecular group.
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{HPC notes}\label{hpc-notes}
+
+The files under \texttt{SPC\_Tool/sh/} are templates. Before submitting:
+
+\begin{itemize}
+\tightlist
+\item
+  replace \texttt{YOUR\_PARTITION} with your partition/queue;
+\item
+  replace \texttt{YOUR\_EMAIL} or remove the mail line;
+\item
+  set \texttt{VASP\_BIN} instead of a hard-coded path;
+\item
+  replace \texttt{module\ load\ ...} /
+  \texttt{\#\ source\ activate\ ...} with the commands that provide
+  PySCF, LAMP-emb and ASE;
+\item
+  make \texttt{num\_freq}, \texttt{num\_pt} and \texttt{name} consistent
+  across \texttt{run1\_stru.sh}, \texttt{run2\_Regr.sh},
+  \texttt{run3\_inp.sh}, \texttt{run4\_CFPs.sh} and the job scripts.
+\end{itemize}
+
+Slurm example:
+
+\begin{lstlisting}
+#!/bin/bash
+#SBATCH -o stdout
+#SBATCH --partition=YOUR_PARTITION
+#SBATCH -J lamp_tau
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=28
+#SBATCH --time=100:00:00
+
+module purge
+module load pyscf
+export OMP_NUM_THREADS=7
+export PYTHONPATH=/path/to/LAMP_emb:$PYTHONPATH
+python dmet_cassiso.py
+\end{lstlisting}
+
+PBS example:
+
+\begin{lstlisting}
+#!/bin/bash
+#PBS -N lamp_tau
+#PBS -q YOUR_QUEUE
+#PBS -l nodes=1:ppn=28
+#PBS -l walltime=100:00:00
+#PBS -o stdout
+#PBS -j oe
+
+cd "$PBS_O_WORKDIR"
+python dmet_cassiso.py
+\end{lstlisting}
+
+The original scripts also used Tianhe \texttt{yhbatch}; replace it with
+the current scheduler commands.
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Troubleshooting}\label{troubleshooting}
+
+\begin{longtable}[]{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Symptom\strut
+ & Cause / fix\strut
+\tabularnewline
+\midrule
+\endhead
+\texttt{ModuleNotFoundError:\ embed\_sim}\strut
+ & Install LAMP-emb and add it to \texttt{PYTHONPATH}.\strut
+\tabularnewline
+\texttt{ModuleNotFoundError:\ mag\_anal}\strut
+ & Install with \texttt{pip\ install\ -e\ .} or run from the repository
+root.\strut
+\tabularnewline
+\texttt{FileNotFoundError:\ .../Atom\_list}\strut
+ & Set \texttt{Atom\_list} in the YAML or create
+\texttt{inpfile/Atom\_list}.\strut
+\tabularnewline
+\texttt{NotImplementedError:\ Ab\_Type=2}\strut
+ & ORCA output is not implemented; use \texttt{Ab\_Type=0/1/3}.\strut
+\tabularnewline
+\texttt{FileNotFoundError:\ CFPs.out}\strut
+ & Run \texttt{run4\_CFPs.sh} first.\strut
+\tabularnewline
+\texttt{KeyError:\ Missing\ required\ key}\strut
+ & Add the missing key to the YAML (the message lists it).\strut
+\tabularnewline
+\texttt{ValueError:\ Could\ not\ find\ \textquotesingle{}Total\ modes\textquotesingle{}}\strut
+ & The CFP file is not in the expected format; see \S7.1.\strut
+\tabularnewline
+Plots do not open on a server\strut
+ & Set \texttt{MPLBACKEND=Agg}.\strut
+\tabularnewline
+\texttt{TPs} values look stale\strut
+ & Delete the cached
+\texttt{OB\textless{}T\textgreater{}.tps}/\texttt{LM\textless{}T\textgreater{}.tps}
+and rerun.\strut
+\tabularnewline
+Shell script does nothing\strut
+ & The scheduler header/modules still belong to the author's cluster; edit
+them (\S10).\strut
+\tabularnewline
+\texttt{vasp\_std:\ command\ not\ found}\strut
+ & Set \texttt{export\ VASP\_BIN=/path/to/vasp\_std}.\strut
+\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Validation}\label{validation}
+
+The shipped DyAC example was used as a smoke test:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{python\ -m\ compileall\ mag\_anal\ SPC\_Tool} passes;
+\item
+  \texttt{python\ -m\ mag\_anal.Anal\_Tau\ -\/-yml\ examples/relaxation/CFPs\_v1.yml}
+  completes;
+\item
+  the 201-mode, 10-50 K run reports \texttt{Ueff\ ≈\ 190\ K} and
+  \texttt{log(\(\tau\)/s)\ ≈\ -11.3};
+\item
+  \texttt{tests/test\_smoke.py} checks that \texttt{OB\_v1.dat} is
+  produced (uses two temperatures).
+\end{itemize}
+
+Run:
+
+\begin{lstlisting}
+MPLBACKEND=Agg python -m pytest tests -q
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.4pt}\end{center}
+
+\section{Citation, license and
+support}\label{citation-license-and-support}
+
+If you use LAMP-tau, please cite the manuscript and the archived
+release:
+
+\begin{itemize}
+\tightlist
+\item
+  manuscript: \emph{Accelerating ab initio spin-phonon relaxation
+  simulation of single-ion magnets by quantum embedding and spatial
+  truncation}, J. Chem. Phys. (2026);
+\item
+  software: see \texttt{CITATION.cff}; the Zenodo DOI is added after the
+  first release.
+\end{itemize}
+
+License: MIT (see \texttt{LICENSE}). Third-party programs keep their own
+licenses:
+
+\begin{itemize}
+\tightlist
+\item
+  PySCF --- Apache-2.0;
+\item
+  LAMP-emb --- not redistributed here; install it separately;
+\item
+  VASP, OpenMolcas, ORCA --- their own licenses;
+\item
+  ASE, NumPy, SciPy, Matplotlib, SymPy, prettytable, PyYAML --- their
+  own licenses.
+\end{itemize}
+
+For questions, open an issue on GitHub. For scientific questions,
+contact the corresponding authors of the paper.
+
+\end{document}

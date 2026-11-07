@@ -18,7 +18,7 @@ and contains the modules used to compute crystal-field parameters (CFPs), magnet
 | `mag_anal/` | Analysis of *ab initio* results: effective spin Hamiltonian, *g* tensors, CFPs, SPC parameters and τ(T). |
 | `SPC_Tool/` | Scripts for the SPC workflow: VASP phonons, displaced structures, PySCF/OpenMolcas inputs, CFP extraction. |
 | `examples/relaxation/` | A complete, runnable DyAC example for the relaxation analysis. |
-| `docs/` | Workflow, input-format and HPC notes; complete user [manual](docs/manual.md) ([HTML](docs/manual.html)). |
+| `docs/` | Workflow, input-format and HPC notes; LaTeX [manual](docs/manual.tex) ([PDF](docs/manual.pdf)), with [Markdown](docs/manual.md) source. |
 
 ## Installation
 
@@ -110,7 +110,7 @@ LAMP_tau/
 
 ## Input formats
 
-A complete user manual is available as [Markdown](docs/manual.md) and [HTML](docs/manual.html).
+A complete user manual is available as LaTeX ([manual.tex](docs/manual.tex)) and PDF ([manual.pdf](docs/manual.pdf)); the [Markdown](docs/manual.md) and [HTML](docs/manual.html) editions retain the Chinese summary and serve as the source text.
 
 See `docs/input_formats.md` for the YAML keys and the file formats of `CFPs_py.out`, `freq.log`, `eqpyout` and the `.eso` tensor-operator files.
 

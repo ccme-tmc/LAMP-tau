@@ -29,6 +29,14 @@ VASP/
 *.pdf
 !SPC_Tool/manual/manual.pdf
 !SPC_Tool/manual.pdf
+!docs/manual.pdf
+
+# LaTeX build artifacts (keep the PDF above)
+docs/manual.aux
+docs/manual.log
+docs/manual.out
+docs/manual.toc
+docs/manual.synctex.gz
 
 # Editor / OS
 .DS_Store
