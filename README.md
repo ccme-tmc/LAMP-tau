@@ -124,7 +124,7 @@ The **full data set** — all three compounds (DyAC, DybBr, DyCp) plus the spati
 
 > **<https://github.com/ccme-tmc/SMMRT-DMET-ST-data>** (2345 files, 297.8 MiB)
 
-That repository ships a `manifest.csv` with a SHA-256 for every file, a `tools/build_archive.py` verifier, and an `EXCLUDED.md` listing the run-time scraps (scheduler logs, checkpoints, duplicate Molcas dumps) that were deliberately left out. Six of its YAML configurations run against the archived data as-is; the two that need Molcas equilibrium logs the authors no longer keep are documented there.
+That repository ships a `manifest.csv` with a SHA-256 for every file, a `tools/build_archive.py` verifier, and an `EXCLUDED.md` listing the run-time scraps (scheduler logs, checkpoints, duplicate Molcas dumps) that were deliberately left out. Its YAML files are the ones actually used at run time; the current reader may ask for a key an old file does not have, so copy the missing line from `examples/relaxation/inpfile/CFPs_v1.yml` before running one.
 
 A Zenodo DOI will be added here and in `CITATION.cff` if the data set is additionally archived there.
 
