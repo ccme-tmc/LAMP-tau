@@ -5,8 +5,9 @@ abstract: "Python tools for ab initio spin-phonon relaxation simulation of singl
 version: "1.0.0"
 date-released: "2026-11-07"
 license: MIT
-repository-code: "https://github.com/Dengyf98/LAMP_tau"
-url: "https://github.com/Dengyf98/LAMP_tau"
+repository-code: "https://github.com/ccme-tmc/LAMP_tau"
+url: "https://github.com/ccme-tmc/LAMP_tau"
+# Data archive: https://github.com/ccme-tmc/SMMRT-DMET-ST-data
 keywords:
   - single-ion magnets
   - spin-phonon coupling

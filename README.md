@@ -25,7 +25,7 @@ and contains the modules used to compute crystal-field parameters (CFPs), magnet
 Requirements: **Python ≥ 3.10** (the code uses `match`/`case`), NumPy, SciPy, PyYAML, prettytable, Matplotlib, ASE and SymPy.
 
 ```bash
-git clone https://github.com/Dengyf98/LAMP_tau.git
+git clone https://github.com/ccme-tmc/LAMP_tau.git
 cd LAMP_tau
 python -m pip install -e .
 # or, if you only want the analysis part:
@@ -94,7 +94,7 @@ The `.sh` files are **templates**: edit the partition/queue, the number of modes
 ## Repository layout
 
 ```
-LAMP_tau/
+lamp-tau/
 ├── mag_anal/                  # analysis package
 │   ├── Anal_Tau.py            # τ(T), SPC and relaxation analysis (CLI: lamp-tau)
 │   ├── psh.py                 # pseudospin Hamiltonian, g tensors, CFP projection
@@ -114,6 +114,10 @@ LAMP_tau/
 └── LICENSE
 ```
 
+The paper's complete data set is a separate repository:
+[`ccme-tmc/SMMRT-DMET-ST-data`](https://github.com/ccme-tmc/SMMRT-DMET-ST-data) (see
+[Data and reproducibility](#data-and-reproducibility)).
+
 ## Input formats
 
 A complete user manual is available as LaTeX ([manual.tex](docs/manual.tex)) and PDF ([manual.pdf](docs/manual.pdf)); the [Markdown](docs/manual.md) and [HTML](docs/manual.html) editions retain the Chinese summary and serve as the source text.
@@ -122,7 +126,15 @@ See `docs/input_formats.md` for the YAML keys and the file formats of `CFPs_py.o
 
 ## Data and reproducibility
 
-The `examples/relaxation/inpfile` data are copied from the calculations used in the paper (DyAC). The full input/output data set (structures, phonons, CFPs, SPC parameters, raw τ(T) and figure scripts) will be archived on Zenodo; the DOI will be added here and in `CITATION.cff` once the release is created.
+The `examples/relaxation/inpfile` data are copied from the calculations used in the paper (DyAC), with author-specific paths replaced by `<path>`.
+
+The **full data set** — all three compounds (DyAC, DybBr, DyCp) plus the spatial-truncation series, i.e. structures, phonons, equilibrium CASSCF-SO/DMET outputs, CFPs, spin-phonon coupling matrices, master-equation matrices, τ(T) data, figures and the scripts as they were at run time — is published separately:
+
+> **<https://github.com/ccme-tmc/SMMRT-DMET-ST-data>** (2345 files, 297.8 MiB)
+
+That repository ships a `manifest.csv` with a SHA-256 for every file, a `tools/build_archive.py` verifier, and an `EXCLUDED.md` listing the run-time scraps (scheduler logs, checkpoints, duplicate Molcas dumps) that were deliberately left out. Six of its YAML configurations run against the archived data as-is; the two that need Molcas equilibrium logs the authors no longer keep are documented there.
+
+A Zenodo DOI will be added here and in `CITATION.cff` if the data set is additionally archived there.
 
 ## Supported platforms
 

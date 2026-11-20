@@ -47,7 +47,7 @@ VASP, OpenMolcas and ORCA are external programs and are **not** distributed with
 ### 2.1 From a clone
 
 ```bash
-git clone https://github.com/Dengyf98/LAMP_tau.git
+git clone https://github.com/ccme-tmc/LAMP_tau.git
 cd LAMP_tau
 python -m pip install -e .
 ```

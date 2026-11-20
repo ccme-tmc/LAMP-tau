@@ -228,6 +228,7 @@ displacement vectors.
         if npts % 2 != 0:
             print("The number of points along a given mode should be an odd number!")
             return
+        n_freq_analysis = self.vecs.shape[0]
         # check if the output directory already exists
         if Path("./perb").exists():
             print("./perb directory already exist! We now delete it...")

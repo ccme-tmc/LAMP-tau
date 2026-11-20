@@ -294,7 +294,6 @@ class CAL_RELAX(object):
         AllRMRate_list2 = []
         AllRMRate_list_lt = []
         AllTTRate_list = []
-        TPlist_rds = np.empty((0,),dtype = float)
 
         Mlabel=self.Calculate_relax()
         TPlabel = 0
@@ -304,7 +303,7 @@ class CAL_RELAX(object):
 
 
         if self.If_uniformization:
-            draw_uni(TPlist_rds,T_list,Mlabel,self.Out_foldname,If_pic=self.If_get_picture_Tt)
+            draw_uni(self.TPlist_rds,T_list,Mlabel,self.Out_foldname,If_pic=self.If_get_picture_Tt)
 
 
         AllOBRate_list.append(np.array(Y(TPs_Analyze.OBRate_list)))
@@ -414,7 +413,8 @@ class CAL_RELAX(object):
         if self.If_uniformization:
             print("Simulation TPs of T = {x}K".format(x=T))
             TP_temp.uniformization()
-            TPlist_rds = np.append(TPlist_rds,-TP_temp.TP[0,0])
+            previous = getattr(self, "TPlist_rds", np.empty((0,), dtype=float))
+            self.TPlist_rds = np.append(previous, -TP_temp.TP[0,0])
         return TP_temp
 
     def check_select_sigma(self,TPs_filename):
@@ -864,7 +864,7 @@ class CFPs_Analyze(object):
         theta_4 = -8/135135
         theta_6 = 4/3864861
         for j in range(0,5):
-            plt.plot(self.X,self.Bkq[i,...,j]/theta_2,label = str(j-2))
+            plt.plot(self.X,self.Bkq[n,...,j]/theta_2,label = str(j-2))
         plt.xlim(-1.0,1.0)
         plt.ylim(-400,400)
         plt.legend(loc=0,ncol=1)

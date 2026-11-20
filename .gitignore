@@ -16,6 +16,7 @@ env/
 
 # Workflow outputs / intermediates
 _backup/
+_staging/
 perb/
 TPs/
 TPs_file/
