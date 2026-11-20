@@ -24,7 +24,7 @@ The complete archive (all three compounds, all displaced structures, phonons, CF
 
 > **<https://github.com/ccme-tmc/SMMRT-DMET-ST-data>** — 2345 files, 297.8 MiB, tag `v1.0.0`.
 
-| Directory there | System | Runnable configuration |
+| Directory there | System | YAML configuration |
 |---|---|---|
 | `Dyacac3_cell_Analyse/` | DyAC, periodic cell | `inpfile/CFPs_v1.yml` |
 | `DybbBr/` | DybBr | `inpfile/CFPs_Re_test2.yml` |
@@ -33,7 +33,9 @@ The complete archive (all three compounds, all displaced structures, phonons, CF
 | `Spacetruncation/DybBr/` | DybBr, truncation series | `inpfile/CFPs_Re_test2.yml` |
 | `Spacetruncation/DyCp/` | DyCp, truncation series | `inpfile/4f_ratecaulcu_input.yml` |
 
-Two configurations in `Spacetruncation/DyAC/inpfile/` (`CFPs.yml`, `CFPs_Re.yml`) read Molcas equilibrium logs that the authors no longer keep; they are archived unchanged as a record of the protocol and need `mag_filename: inpfile/eqpyout` (or a fresh Molcas run) to be usable.
+Those YAML files are the ones used at run time, for the code of that moment. If the current reader asks for a key an old file does not have (`g_z`, `CFPs_Type`, `Ab_Type`, `If_Perb`, `Perb_T`, …), copy the line from `examples/relaxation/inpfile/CFPs_v1.yml`. The two `4f_ratecaulcu_input.yml` files belong to the 4f-rate helper (Hessian + g tensor) rather than to the relaxation CLI.
+
+Two configurations in `Spacetruncation/DyAC/inpfile/` (`CFPs.yml`, `CFPs_Re.yml`) additionally read Molcas equilibrium logs that the authors no longer keep; they are archived unchanged as a record of the protocol and need `mag_filename: inpfile/eqpyout` (or a fresh Molcas run) to be usable.
 
 The data repository also carries:
 

@@ -143,7 +143,7 @@ A Zenodo DOI will be added here and in `CITATION.cff` if the data set is additio
 
 ## Citation
 
-If you use this code, please cite the paper above and the archived release. See `CITATION.cff`; the Zenodo DOI will be inserted after the first release.
+If you use this code, please cite the associated publication (metadata in `CITATION.cff`) and the archived release.
 
 ## License
 
