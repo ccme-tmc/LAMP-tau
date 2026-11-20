@@ -41,34 +41,40 @@ The periodic-DFT part of `SPC_Tool` uses **VASP**; the OpenMolcas path uses **Op
 
 ## Quick start: relaxation analysis (DyAC example)
 
-From the repository root:
+The example is self-contained, with the same layout as the paper's
+`SPC_Tool/Relaxation` folder. Run it from `examples/relaxation`:
 
 ```bash
-lamp-tau --yml examples/relaxation/CFPs_v1.yml
+cd examples/relaxation
+lamp-tau --yml inpfile/CFPs_v1.yml
 ```
 
-or
+or, without installing (from `examples/relaxation`):
 
 ```bash
-python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+PYTHONPATH=../.. python -m mag_anal.Anal_Tau --yml inpfile/CFPs_v1.yml
 ```
 
-The example reads:
+You can also open [examples/relaxation/run.ipynb](examples/relaxation/run.ipynb) and execute the cells.
 
-- `examples/relaxation/DyAC/CFPs_py.out` — per-displacement CFPs (201 Cartesian modes × 10 points);
-- `examples/relaxation/DyAC/eqpyout` — equilibrium PySCF/CASSCF-SO output;
-- `examples/relaxation/DyAC/freq.log` and `POSCAR` — VASP phonon frequencies/eigenvectors and structure;
-- `examples/relaxation/DyAC/Atom_list` — atoms retained by the spatial-truncation selection;
-- `examples/relaxation/ESO_TTO/` — tesseral tensor-operator matrices for the 16 states.
+The example reads (all under `examples/relaxation/inpfile/`):
 
-Outputs are written to `examples/relaxation/TPs_file/` (τ(T) data and figures). On a headless machine use `MPLBACKEND=Agg`.
+- `CFPs_py.out` — per-displacement CFPs (201 Cartesian modes × 10 points);
+- `eqpyout` — equilibrium PySCF/CASSCF-SO output;
+- `freq.log` and `POSCAR` — VASP phonon frequencies/eigenvectors and structure;
+- `Atom_list` — atoms retained by the spatial-truncation selection;
+- `TTO/` — tesseral tensor-operator matrices for the 16 states.
+
+Outputs are written to `examples/relaxation/TPs_file/` (τ(T) data and figures);
+a reference `OB_v1.dat` is in `examples/relaxation/expected/`. On a headless
+machine use `MPLBACKEND=Agg`.
 
 A minimal programmatic call is:
 
 ```python
 from mag_anal.Anal_Tau import CAL_RELAX
 
-tau = CAL_RELAX("examples/relaxation/CFPs_v1.yml")
+tau = CAL_RELAX("inpfile/CFPs_v1.yml")   # run from examples/relaxation
 tau.kernel()
 ```
 
@@ -116,7 +122,7 @@ See `docs/input_formats.md` for the YAML keys and the file formats of `CFPs_py.o
 
 ## Data and reproducibility
 
-The `examples/relaxation/DyAC` data are copied from the calculations used in the paper (DyAC). The full input/output data set (structures, phonons, CFPs, SPC parameters, raw τ(T) and figure scripts) will be archived on Zenodo; the DOI will be added here and in `CITATION.cff` once the release is created.
+The `examples/relaxation/inpfile` data are copied from the calculations used in the paper (DyAC). The full input/output data set (structures, phonons, CFPs, SPC parameters, raw τ(T) and figure scripts) will be archived on Zenodo; the DOI will be added here and in `CITATION.cff` once the release is created.
 
 ## Supported platforms
 

@@ -57,7 +57,8 @@ This writes `CFPs.out`, which is the `CFPs_filename` expected by `mag_anal`.
 ## Step 5 — relaxation time
 
 ```bash
-lamp-tau --yml examples/relaxation/CFPs_v1.yml
+cd examples/relaxation
+lamp-tau --yml inpfile/CFPs_v1.yml
 ```
 
 The YAML file must point to `CFPs.out`, the equilibrium output, `freq.log`, `POSCAR`, `Atom_list` and the tensor-operator folder. Outputs (including `OB_v1.dat`, `RM_v1.dat` and `TPs1.png`) go to `Out_foldname`.

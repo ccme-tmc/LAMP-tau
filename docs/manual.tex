@@ -205,16 +205,17 @@ LAMP_tau/
 \section{Quick start: relaxation analysis
 (DyAC)}\label{quick-start-relaxation-analysis-dyac}
 
-The shipped example uses DyAC and runs from the repository root.
+The shipped example uses DyAC and runs from \texttt{examples/relaxation}.
 
 \begin{lstlisting}
-lamp-tau --yml examples/relaxation/CFPs_v1.yml
+cd examples/relaxation
+lamp-tau --yml inpfile/CFPs_v1.yml
 \end{lstlisting}
 
 or, without installing:
 
 \begin{lstlisting}
-python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+PYTHONPATH=../.. python -m mag_anal.Anal_Tau --yml inpfile/CFPs_v1.yml
 \end{lstlisting}
 
 What happens:
@@ -272,7 +273,7 @@ reduce \texttt{Trange1} to two temperatures.
 \begin{lstlisting}
 from mag_anal.Anal_Tau import CAL_RELAX
 
-tau = CAL_RELAX("examples/relaxation/CFPs_v1.yml")
+tau = CAL_RELAX("inpfile/CFPs_v1.yml")   # run from examples/relaxation
 tau.kernel()
 
 # Orbach rate-determining analysis for the first temperature
@@ -1064,7 +1065,8 @@ The shipped DyAC example was used as a smoke test:
 \item
   \texttt{python\ -m\ compileall\ mag\_anal\ SPC\_Tool} passes;
 \item
-  \texttt{python\ -m\ mag\_anal.Anal\_Tau\ -\/-yml\ examples/relaxation/CFPs\_v1.yml}
+  from \texttt{examples/relaxation},
+  \texttt{python\ -m\ mag\_anal.Anal\_Tau\ -\/-yml\ inpfile/CFPs\_v1.yml}
   completes;
 \item
   the 201-mode, 10-50 K run reports \texttt{Ueff\ ≈\ 190\ K} and

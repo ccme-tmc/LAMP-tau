@@ -10,11 +10,12 @@ from mag_anal.Anal_Tau import CAL_RELAX
 
 def test_example_runs(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
-    monkeypatch.chdir(root)
+    work = root / "examples/relaxation"
+    monkeypatch.chdir(work)
 
-    cfg = (root / "examples/relaxation/CFPs_v1.yml").read_text(encoding="utf-8")
-    cfg = cfg.replace("examples/relaxation/TPs_file", str(tmp_path / "out"))
-    cfg = cfg.replace("examples/relaxation/TPs", str(tmp_path / "TPs"))
+    cfg = (work / "inpfile/CFPs_v1.yml").read_text(encoding="utf-8")
+    cfg = cfg.replace("TPs_file", str(tmp_path / "out"))
+    cfg = cfg.replace("TPs_foldname: TPs", f"TPs_foldname: {tmp_path / 'TPs'}")
     cfg = cfg.replace("Trange1: 10,50,5", "Trange1: 10,20,10")
     cfg = cfg.replace("If_get_picture_Tt: True", "If_get_picture_Tt: False")
 

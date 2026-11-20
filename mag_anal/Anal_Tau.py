@@ -901,7 +901,10 @@ class CFPs_Analyze(object):
         B_slope = np.zeros([self.nmdsori,27], dtype = float)
         for i in range(0,self.nmds):
             X,B = self.select_XB(i)
-            #print(i,X,B)
+            if X.size < order + 1:
+                # Mode with too few non-zero displacement points (for example
+                # a mode whose CFPs are all zero): leave the derivative at 0.
+                continue
             for j in range(0,27):
                 B_slope[i,j] = polyfit(X, B[...,j], order)[int(order-1)]
         self.B_slope = B_slope
@@ -913,7 +916,9 @@ class CFPs_Analyze(object):
         B_slope = np.zeros([self.xyznmd,27], dtype = float)
         for i in range(0,self.xyznmd):
             X,B = self.select_XB(i)
-            #print(i,X,B)
+            if X.size < order + 1:
+                # See gen_slope: all-zero / incomplete displacement series.
+                continue
             for j in range(0,27):
                 B_slope[i,j] = polyfit(X, B[...,j], order)[int(order-1)]
         self.B_slopexyz = B_slope
@@ -2775,8 +2780,8 @@ def main(argv=None):
     parser.add_argument(
         "--yml",
         dest="yml",
-        default="examples/relaxation/CFPs_v1.yml",
-        help="YAML parameter file (default: examples/relaxation/CFPs_v1.yml)",
+        default="inpfile/CFPs_v1.yml",
+        help="YAML parameter file (default: inpfile/CFPs_v1.yml; run from examples/relaxation)",
     )
     args = parser.parse_args(argv)
     if not Path(args.yml).is_file():

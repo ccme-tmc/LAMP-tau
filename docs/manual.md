@@ -122,16 +122,17 @@ LAMP_tau/
 
 ## 4. Quick start: relaxation analysis (DyAC)
 
-The shipped example uses DyAC and runs from the repository root.
+The shipped example uses DyAC and runs from `examples/relaxation`.
 
 ```bash
-lamp-tau --yml examples/relaxation/CFPs_v1.yml
+cd examples/relaxation
+lamp-tau --yml inpfile/CFPs_v1.yml
 ```
 
 or, without installing:
 
 ```bash
-python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+PYTHONPATH=../.. python -m mag_anal.Anal_Tau --yml inpfile/CFPs_v1.yml
 ```
 
 What happens:
@@ -167,7 +168,7 @@ The full example takes a few minutes on a laptop. For a faster check, reduce `Tr
 ```python
 from mag_anal.Anal_Tau import CAL_RELAX
 
-tau = CAL_RELAX("examples/relaxation/CFPs_v1.yml")
+tau = CAL_RELAX("inpfile/CFPs_v1.yml")   # run from examples/relaxation
 tau.kernel()
 
 # Orbach rate-determining analysis for the first temperature
@@ -325,7 +326,7 @@ See §6 for all keys and §8 for outputs.
 
 ## 6. YAML reference
 
-A complete example is `examples/relaxation/CFPs_v1.yml`.
+A complete example is `examples/relaxation/inpfile/CFPs_v1.yml`.
 
 ### 6.1 Required keys
 
@@ -446,7 +447,7 @@ k = 2,q = -2
 ...
 ```
 
-The shipped `examples/relaxation/ESO_TTO/` files are for 16 states (Dy³⁺).
+The shipped `examples/relaxation/inpfile/TTO/` files are for 16 states (Dy³⁺).
 
 ### 7.5 Templates
 
@@ -648,7 +649,7 @@ The original scripts also used Tianhe `yhbatch`; replace it with the current sch
 The shipped DyAC example was used as a smoke test:
 
 - `python -m compileall mag_anal SPC_Tool` passes;
-- `python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml` completes;
+- from `examples/relaxation`, `python -m mag_anal.Anal_Tau --yml inpfile/CFPs_v1.yml` completes;
 - the 201-mode, 10-50 K run reports `Ueff ≈ 190 K` and `log(τ/s) ≈ -11.3`;
 - `tests/test_smoke.py` checks that `OB_v1.dat` is produced (uses two temperatures).
 

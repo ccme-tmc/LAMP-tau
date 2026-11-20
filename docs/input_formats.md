@@ -4,7 +4,7 @@ This page documents the files consumed by `mag_anal.Anal_Tau` and by the SPC wor
 
 ## YAML parameter file
 
-A complete example is `examples/relaxation/CFPs_v1.yml`.
+A complete example is `examples/relaxation/inpfile/CFPs_v1.yml`.
 
 | Key | Type | Meaning |
 |---|---|---|
@@ -70,7 +70,7 @@ A PySCF output containing the `Rotated Crystal Field Parameters:` table and the 
 
 ## `.eso` tensor-operator files
 
-`TO_foldname` must contain `<Nstate>_real.eso` and `<Nstate>_imag.eso`, each starting with `k = 2,q = -2` followed by `Nstate × Nstate` real numbers. The shipped `ESO_TTO/` files are for `Nstate=16` (Dy³⁺, eight Kramers doublets).
+`TO_foldname` must contain `<Nstate>_real.eso` and `<Nstate>_imag.eso`, each starting with `k = 2,q = -2` followed by `Nstate × Nstate` real numbers. The shipped `inpfile/TTO/` files are for `Nstate=16` (Dy³⁺, eight Kramers doublets).
 
 ## Templates
 

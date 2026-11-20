@@ -2,7 +2,7 @@
 
 ## Shipped example
 
-`examples/relaxation/DyAC/` contains the data for the DyAC complex used in the paper:
+`examples/relaxation/inpfile/` contains the data for the DyAC complex used in the paper:
 
 | File | Content |
 |---|---|
@@ -14,7 +14,7 @@
 | `dpxs` | Lattice-displacement indices (for the periodic-cell path). |
 | `eq_opt.xyz` | Equilibrium molecular geometry. |
 
-`examples/relaxation/ESO_TTO/` contains the 16-state tesseral tensor-operator matrices.
+`examples/relaxation/inpfile/TTO/` contains the 16-state tesseral tensor-operator matrices.
 
 The data were copied from the calculation archive of the paper. Author-specific paths in `eqpyout` were replaced by `<path>`; no numerical data were changed.
 

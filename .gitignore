@@ -27,6 +27,7 @@ VASP/
 *.dat
 *.png
 *.pdf
+!examples/relaxation/expected/OB_v1.dat
 !SPC_Tool/manual/manual.pdf
 !SPC_Tool/manual.pdf
 !docs/manual.pdf

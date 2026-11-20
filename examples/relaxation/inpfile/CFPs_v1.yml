@@ -1,22 +1,22 @@
 # Example input for the relaxation analysis (mag_anal).
-# System: DyAC (the data are shipped in examples/relaxation/DyAC).
-# Run from the repository root:
-#   lamp-tau --yml examples/relaxation/CFPs_v1.yml
+# System: DyAC. The data are in this inpfile/ directory.
+# Run from examples/relaxation:
+#   lamp-tau --yml inpfile/CFPs_v1.yml
 # or
-#   python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+#   python -m mag_anal.Anal_Tau --yml inpfile/CFPs_v1.yml
 
-CFPs_filename: examples/relaxation/DyAC/CFPs_py.out
-mag_filename: examples/relaxation/DyAC/eqpyout
+CFPs_filename: inpfile/CFPs_py.out
+mag_filename: inpfile/eqpyout
 Ab_Type: 3                      # 0 Molcas, 1 OpenMolcas, 3 PySCF
-freq_filename: examples/relaxation/DyAC/freq.log
-POSCAR: examples/relaxation/DyAC/POSCAR
-Atom_list: examples/relaxation/DyAC/Atom_list
-TO_foldname: examples/relaxation/ESO_TTO
+freq_filename: inpfile/freq.log
+POSCAR: inpfile/POSCAR
+Atom_list: inpfile/Atom_list
+TO_foldname: inpfile/TTO
 
 # Outputs
-VP_filename: examples/relaxation/TPs_file/VP.log
-TPs_foldname: examples/relaxation/TPs
-Out_foldname: examples/relaxation/TPs_file
+VP_filename: TPs_file/VP.log
+TPs_foldname: TPs
+Out_foldname: TPs_file
 
 # Frequency correction and CFP fitting
 Correction_slope: 1
@@ -39,7 +39,7 @@ Trange1: 10,50,5
 # Plotting and relaxation channels
 If_get_picture_Tt: True
 If_Orbach: True
-If_Raman: False
+If_Raman: False                 # set True to include the Raman channel (slower)
 If_uniformization: False
 
 # Experimental data overlay (disabled for the shipped example)

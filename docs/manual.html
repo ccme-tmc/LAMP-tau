@@ -145,11 +145,12 @@ python -m pytest tests -q
 </code></pre>
 <hr>
 <h2 id="4-quick-start-relaxation-analysis-dyac">4. Quick start: relaxation analysis (DyAC)</h2>
-<p>The shipped example uses DyAC and runs from the repository root.</p>
-<pre><code class="language-bash">lamp-tau --yml examples/relaxation/CFPs_v1.yml
+<p>The shipped example uses DyAC and runs from <code>examples/relaxation</code>.</p>
+<pre><code class="language-bash">cd examples/relaxation
+lamp-tau --yml inpfile/CFPs_v1.yml
 </code></pre>
 <p>or, without installing:</p>
-<pre><code class="language-bash">python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml
+<pre><code class="language-bash">PYTHONPATH=../.. python -m mag_anal.Anal_Tau --yml inpfile/CFPs_v1.yml
 </code></pre>
 <p>What happens:</p>
 <ol>
@@ -199,7 +200,7 @@ rate-determing step
 <h3 id="41-programmatic-use">4.1 Programmatic use</h3>
 <pre><code class="language-python">from mag_anal.Anal_Tau import CAL_RELAX
 
-tau = CAL_RELAX(&quot;examples/relaxation/CFPs_v1.yml&quot;)
+tau = CAL_RELAX(&quot;inpfile/CFPs_v1.yml&quot;)   # run from examples/relaxation
 tau.kernel()
 
 # Orbach rate-determining analysis for the first temperature
@@ -423,7 +424,7 @@ python3 gen_structures_cell.py --out ../../inpfile/freq.log --pos ../../inpfile/
 <p>See §6 for all keys and §8 for outputs.</p>
 <hr>
 <h2 id="6-yaml-reference">6. YAML reference</h2>
-<p>A complete example is <code>examples/relaxation/CFPs_v1.yml</code>.</p>
+<p>A complete example is <code>examples/relaxation/inpfile/CFPs_v1.yml</code>.</p>
 <h3 id="61-required-keys">6.1 Required keys</h3>
 <table>
 <thead>
@@ -659,7 +660,7 @@ Mode 1 Point 1
 &lt;16 × 16 real numbers&gt;
 ...
 </code></pre>
-<p>The shipped <code>examples/relaxation/ESO_TTO/</code> files are for 16 states (Dy³⁺).</p>
+<p>The shipped <code>examples/relaxation/inpfile/TTO/</code> files are for 16 states (Dy³⁺).</p>
 <h3 id="75-templates">7.5 Templates</h3>
 <p><code>SPC_Tool/inpfile/*.tmpl</code> are <strong>not runnable</strong>. They contain three placeholder lines:</p>
 <pre><code>Molecular_Name
@@ -966,7 +967,7 @@ python dmet_cassiso.py
 <p>The shipped DyAC example was used as a smoke test:</p>
 <ul>
 <li><code>python -m compileall mag_anal SPC_Tool</code> passes;</li>
-<li><code>python -m mag_anal.Anal_Tau --yml examples/relaxation/CFPs_v1.yml</code> completes;</li>
+<li>from <code>examples/relaxation</code>, <code>python -m mag_anal.Anal_Tau --yml inpfile/CFPs_v1.yml</code> completes;</li>
 <li>the 201-mode, 10-50 K run reports <code>Ueff ≈ 190 K</code> and <code>log(τ/s) ≈ -11.3</code>;</li>
 <li><code>tests/test_smoke.py</code> checks that <code>OB_v1.dat</code> is produced (uses two temperatures).</li>
 </ul>
