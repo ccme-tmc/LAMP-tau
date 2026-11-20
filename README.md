@@ -2,14 +2,6 @@
 
 Python tools for *ab initio* spin-phonon relaxation simulation of single-ion magnets (SIMs), built on top of [PySCF](https://pyscf.org/) and intended to be used together with [LAMP-emb](https://github.com/ZGuan97/LAMP_emb).
 
-This repository accompanies the manuscript
-
-> **Accelerating ab initio spin-phonon relaxation simulation of single-ion magnets by quantum embedding and spatial truncation**
-> Y. Deng et al., *J. Chem. Phys.* (2026)
-
-and contains the modules used to compute crystal-field parameters (CFPs), magnetic anisotropy *g* tensors, spin-phonon coupling (SPC) parameters and spin-relaxation times τ(T).
-
-> 中文简介：本仓库包含论文中使用的 DMET+CASSCF-SO / CFP / 自旋-声子耦合 / 弛豫时间计算脚本。`mag_anal` 负责分析，`SPC_Tool` 负责生成扰动结构、提取 CFPs 与组织 PySCF/VASP 计算。安装与最小示例见下文。
 
 ## What is included
 
