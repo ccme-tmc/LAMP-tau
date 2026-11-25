@@ -2428,18 +2428,10 @@ def green_RM22(omega,omega1,omega2,sigma,T):
     a3 = 1/(np.exp(const.hbar*2*np.pi*const.c*omega2/T/const.kb)-1)
     return a1*a2*a3
 
-def get_RM_VPss(Eigen,f,i,j,k,omega1,omega2):
-    a = 0
-    for c in range(0,Eigen.n_states):
-        if Eigen.Vaules[c]<5000:
-            a += Eigen.VP[f,c,j]*Eigen.VP[c,i,k]/(Eigen.Vaules[c]-Eigen.Vaules[i]+omega2)
-    return get_Mod_square(a)
-
 def get_RM_VP(Eigen,f,i,j,k,omega1,omega2):
     a = 0
     for c in range(0,Eigen.n_states):
-        if Eigen.Vaules[c]<5000:
-            a += Eigen.VP[f,c,j]*Eigen.VP[c,i,k]/(Eigen.Vaules[c]-Eigen.Vaules[i]+omega2-6*1j)+Eigen.VP[f,c,k]*Eigen.VP[c,i,j]/(Eigen.Vaules[c]-Eigen.Vaules[i]-omega1-6*1j)
+        a += Eigen.VP[f,c,j]*Eigen.VP[c,i,k]/(Eigen.Vaules[c]-Eigen.Vaules[i]+omega2-6*1j)+Eigen.VP[f,c,k]*Eigen.VP[c,i,j]/(Eigen.Vaules[c]-Eigen.Vaules[i]+omega1-6*1j)
     return get_Mod_square(a)
 
 def get_Modes_list1(nmds,Eigen,mol,select_sigma):
